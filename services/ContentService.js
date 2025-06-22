@@ -4,8 +4,9 @@ const matter = require('gray-matter');
 const config = require('../config/default');
 
 class ContentService {
-  constructor() {
+  constructor(cacheService = null) {
     this.contentPath = config.paths.content;
+    this.cache = cacheService;
   }
 
   /**
@@ -16,6 +17,28 @@ class ContentService {
   async getPage(slug) {
     try {
       const pagePath = path.join(this.contentPath, slug, 'index.md');
+      
+      // Use cache if available
+      if (this.cache) {
+        return await this.cache.cacheContent(pagePath, async () => {
+          return await this._loadPage(slug, pagePath);
+        });
+      }
+      
+      return await this._loadPage(slug, pagePath);
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Internal method to load page from disk
+   */
+  async _loadPage(slug, pagePath) {
+    try {
       const fileContent = await fs.readFile(pagePath, 'utf-8');
       const { data, content } = matter(fileContent);
       
@@ -151,6 +174,12 @@ class ContentService {
       // Write file
       await fs.writeFile(filePath, fileContent, 'utf-8');
 
+      // Invalidate cache for this page and page listings
+      if (this.cache) {
+        this.cache.invalidatePattern(`.*${slug}.*`);
+        this.cache.invalidatePattern('.*listPages.*');
+      }
+
       return await this.getPage(slug);
     } catch (error) {
       console.error('Error saving page:', error);
@@ -175,6 +204,13 @@ class ContentService {
 
       // Remove directory and all contents
       await fs.rm(pagePath, { recursive: true, force: true });
+      
+      // Invalidate cache for this page and page listings
+      if (this.cache) {
+        this.cache.invalidatePattern(`.*${slug}.*`);
+        this.cache.invalidatePattern('.*listPages.*');
+      }
+      
       return true;
     } catch (error) {
       if (error.code === 'ENOENT') {

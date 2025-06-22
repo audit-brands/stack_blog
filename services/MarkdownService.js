@@ -1,7 +1,9 @@
 const MarkdownIt = require('markdown-it');
 
 class MarkdownService {
-  constructor(options = {}) {
+  constructor(cacheService = null, options = {}) {
+    this.cache = cacheService;
+    
     // Initialize markdown-it with sensible defaults
     this.md = new MarkdownIt({
       html: true,           // Enable HTML tags in source
@@ -43,6 +45,15 @@ class MarkdownService {
    */
   render(markdown) {
     if (!markdown) return '';
+    
+    // Use cache if available
+    if (this.cache) {
+      const cacheKey = this.cache.generateKey(`markdown:${markdown}`);
+      return this.cache.cached(cacheKey, () => {
+        return this.md.render(markdown);
+      }, 10 * 60 * 1000); // 10 minutes TTL for rendered markdown
+    }
+    
     return this.md.render(markdown);
   }
 

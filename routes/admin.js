@@ -1,6 +1,6 @@
 const express = require('express');
 const csrf = require('csurf');
-const { authService, contentService, mediaService } = require('../services');
+const { authService, contentService, mediaService, cacheService } = require('../services');
 
 const router = express.Router();
 
@@ -597,6 +597,78 @@ router.get('/media/:filename/info', authService.requireAuth.bind(authService), a
     console.error('Error getting file info:', error);
     res.status(500).json({
       error: 'Failed to get file info',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Cache status and management
+ */
+router.get('/cache', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
+  const user = authService.getAuthenticatedUser(req.session);
+  const stats = cacheService.getStats();
+  
+  res.render('admin/cache', {
+    page: {
+      metadata: {
+        title: 'Cache Management'
+      }
+    },
+    site: {
+      title: 'Stack Blog',
+      description: 'Admin Panel'
+    },
+    user,
+    stats,
+    csrfToken: req.csrfToken(),
+    currentPath: req.path
+  });
+});
+
+/**
+ * Clear cache
+ */
+router.post('/cache/clear', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
+  try {
+    cacheService.clear();
+    
+    if (req.xhr || req.headers.accept === 'application/json') {
+      return res.json({
+        success: true,
+        message: 'Cache cleared successfully'
+      });
+    }
+    
+    res.redirect('/admin/cache?cleared=true');
+  } catch (error) {
+    console.error('Error clearing cache:', error);
+    res.status(500).json({
+      error: 'Failed to clear cache',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Preload content cache
+ */
+router.post('/cache/preload', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    await cacheService.preloadContent(contentService.contentPath);
+    
+    if (req.xhr || req.headers.accept === 'application/json') {
+      return res.json({
+        success: true,
+        message: 'Content cache preloaded successfully'
+      });
+    }
+    
+    res.redirect('/admin/cache?preloaded=true');
+  } catch (error) {
+    console.error('Error preloading cache:', error);
+    res.status(500).json({
+      error: 'Failed to preload cache',
       message: error.message
     });
   }
