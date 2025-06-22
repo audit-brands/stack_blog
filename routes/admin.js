@@ -1,6 +1,6 @@
 const express = require('express');
 const csrf = require('csurf');
-const { authService, contentService } = require('../services');
+const { authService, contentService, mediaService } = require('../services');
 
 const router = express.Router();
 
@@ -402,6 +402,201 @@ router.post('/pages/:slug/delete', authService.requireAuth.bind(authService), cs
     console.error('Error deleting page:', error);
     res.status(500).json({
       error: 'Delete failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Media library listing page
+ */
+router.get('/media', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const user = authService.getAuthenticatedUser(req.session);
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+    const search = req.query.search || '';
+    const type = req.query.type || 'all';
+    const uploadedMessage = req.query.uploaded || '';
+    const deletedMessage = req.query.deleted || '';
+    
+    const result = await mediaService.listFiles({
+      page,
+      limit,
+      search,
+      type
+    });
+    
+    res.render('admin/media', {
+      page: {
+        metadata: {
+          title: 'Media Library'
+        }
+      },
+      site: {
+        title: 'Stack Blog',
+        description: 'Admin Panel'
+      },
+      user,
+      files: result.files,
+      pagination: result.pagination,
+      search,
+      type,
+      uploadedMessage,
+      deletedMessage,
+      csrfToken: req.csrfToken(),
+      currentPath: req.path,
+      formatFileSize: mediaService.formatFileSize.bind(mediaService)
+    });
+  } catch (error) {
+    console.error('Error loading media:', error);
+    res.status(500).render('admin/error', {
+      page: {
+        metadata: {
+          title: 'Error'
+        }
+      },
+      site: {
+        title: 'Stack Blog',
+        description: 'Admin Panel'
+      },
+      error: process.env.NODE_ENV === 'development' ? error : null,
+      currentPath: req.path
+    });
+  }
+});
+
+/**
+ * File upload handler
+ */
+router.post('/media/upload', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const upload = mediaService.getMulterConfig();
+    const uploadMultiple = upload.array('files', 10);
+    
+    uploadMultiple(req, res, async (err) => {
+      if (err) {
+        console.error('Upload error:', err);
+        return res.status(400).json({
+          error: 'Upload failed',
+          message: err.message
+        });
+      }
+      
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+          error: 'No files uploaded'
+        });
+      }
+      
+      const processedFiles = [];
+      
+      // Process each uploaded file
+      for (const file of req.files) {
+        try {
+          const isImage = mediaService.imageFormats.includes(file.mimetype);
+          let processResult = { original: file.filename, thumbnail: null };
+          
+          if (isImage) {
+            processResult = await mediaService.processImage(file.path, {
+              generateThumbnail: true,
+              maxWidth: 1920,
+              maxHeight: 1080,
+              quality: 85
+            });
+          }
+          
+          processedFiles.push({
+            filename: file.filename,
+            originalName: file.originalname,
+            size: file.size,
+            mimetype: file.mimetype,
+            processed: processResult
+          });
+        } catch (processError) {
+          console.error('Error processing file:', processError);
+          // Continue with other files even if one fails
+        }
+      }
+      
+      if (req.xhr || req.headers.accept === 'application/json') {
+        return res.json({
+          success: true,
+          files: processedFiles,
+          message: `${processedFiles.length} file(s) uploaded successfully`
+        });
+      }
+      
+      // Regular form submission - redirect with success message
+      const fileNames = processedFiles.map(f => f.originalName).join(', ');
+      res.redirect('/admin/media?uploaded=' + encodeURIComponent(fileNames));
+    });
+  } catch (error) {
+    console.error('Error in upload handler:', error);
+    res.status(500).json({
+      error: 'Upload failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Delete media file
+ */
+router.post('/media/:filename/delete', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const { filename } = req.params;
+    
+    const fileInfo = await mediaService.getFileInfo(filename);
+    if (!fileInfo) {
+      return res.status(404).json({
+        error: 'File not found'
+      });
+    }
+    
+    const deleted = await mediaService.deleteFile(filename);
+    
+    if (deleted) {
+      if (req.xhr || req.headers.accept === 'application/json') {
+        return res.json({
+          success: true,
+          message: 'File deleted successfully'
+        });
+      }
+      res.redirect('/admin/media?deleted=' + encodeURIComponent(filename));
+    } else {
+      res.status(500).json({
+        error: 'Failed to delete file'
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    res.status(500).json({
+      error: 'Delete failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Get file info (for AJAX requests)
+ */
+router.get('/media/:filename/info', authService.requireAuth.bind(authService), async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const fileInfo = await mediaService.getFileInfo(filename);
+    
+    if (!fileInfo) {
+      return res.status(404).json({
+        error: 'File not found'
+      });
+    }
+    
+    res.json(fileInfo);
+  } catch (error) {
+    console.error('Error getting file info:', error);
+    res.status(500).json({
+      error: 'Failed to get file info',
       message: error.message
     });
   }

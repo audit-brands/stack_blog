@@ -70,12 +70,27 @@ app.use('/media', express.static(path.join(__dirname, 'content'), {
   index: false,
   setHeaders: (res, filePath) => {
     // Only allow certain file types to be served
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.svg'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.svg', '.txt', '.doc', '.docx'];
     const ext = path.extname(filePath).toLowerCase();
     
     if (!allowedExtensions.includes(ext)) {
       res.status(403);
       return false;
+    }
+    
+    // Set proper content type for images
+    if (['.jpg', '.jpeg'].includes(ext)) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (ext === '.png') {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (ext === '.gif') {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (ext === '.webp') {
+      res.setHeader('Content-Type', 'image/webp');
+    } else if (ext === '.svg') {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    } else if (ext === '.pdf') {
+      res.setHeader('Content-Type', 'application/pdf');
     }
   }
 }));
