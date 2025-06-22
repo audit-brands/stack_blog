@@ -8,6 +8,7 @@ require('dotenv').config();
 const config = require('./config/default');
 const frontendRoutes = require('./routes/frontend');
 const adminRoutes = require('./routes/admin');
+const apiRoutes = require('./routes/api');
 const { cacheService, pluginService } = require('./services');
 
 const app = express();
@@ -103,6 +104,7 @@ app.use('/media', express.static(path.join(__dirname, 'content'), {
 }));
 
 // Routes
+app.use('/api', apiRoutes);
 app.use('/admin', adminRoutes);
 app.use('/', frontendRoutes);
 
