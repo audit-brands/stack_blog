@@ -1,42 +1,26 @@
 const express = require('express');
 const { contentService, markdownService, searchService, mediaService, authService } = require('../services');
+const { uploadLimiter, uploadSecurityCheck } = require('../middleware/security');
+const { 
+  validatePage, 
+  validateSearch, 
+  validatePagination, 
+  validateSlug, 
+  validateFilename, 
+  validateApiRequest,
+  validateContentType,
+  validateFileUpload
+} = require('../middleware/validation');
 
 const router = express.Router();
 
-// API Authentication middleware for protected endpoints
-const apiAuth = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const apiKey = process.env.API_KEY;
-  
-  // Skip auth if no API key is configured
-  if (!apiKey) {
-    return next();
-  }
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Bearer token required'
-    });
-  }
-  
-  const token = authHeader.substring(7);
-  if (token !== apiKey) {
-    return res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Invalid API key'
-    });
-  }
-  
-  next();
-};
 
 // Content API endpoints
 
 /**
  * Get all pages with pagination and filtering
  */
-router.get('/pages', async (req, res) => {
+router.get('/pages', validatePagination, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = Math.min(parseInt(req.query.limit) || 10, 100); // Max 100 items
@@ -93,7 +77,7 @@ router.get('/pages', async (req, res) => {
 /**
  * Get a specific page by slug
  */
-router.get('/pages/:slug', async (req, res) => {
+router.get('/pages/:slug', validateSlug, async (req, res) => {
   try {
     const { slug } = req.params;
     const includeHtml = req.query.html !== 'false';
@@ -144,7 +128,7 @@ router.get('/pages/:slug', async (req, res) => {
 /**
  * Create a new page (protected)
  */
-router.post('/pages', apiAuth, async (req, res) => {
+router.post('/pages', validateApiRequest, validateContentType(['application/json']), validatePage, async (req, res) => {
   try {
     const { slug, title, content, description, template, date } = req.body;
     
@@ -211,7 +195,7 @@ router.post('/pages', apiAuth, async (req, res) => {
 /**
  * Update an existing page (protected)
  */
-router.put('/pages/:slug', apiAuth, async (req, res) => {
+router.put('/pages/:slug', validateApiRequest, validateSlug, validateContentType(['application/json']), validatePage, async (req, res) => {
   try {
     const { slug } = req.params;
     const { title, content, description, template, date, newSlug } = req.body;
@@ -295,7 +279,7 @@ router.put('/pages/:slug', apiAuth, async (req, res) => {
 /**
  * Delete a page (protected)
  */
-router.delete('/pages/:slug', apiAuth, async (req, res) => {
+router.delete('/pages/:slug', validateApiRequest, validateSlug, async (req, res) => {
   try {
     const { slug } = req.params;
     
@@ -334,7 +318,7 @@ router.delete('/pages/:slug', apiAuth, async (req, res) => {
 /**
  * Search content
  */
-router.get('/search', async (req, res) => {
+router.get('/search', validateSearch, async (req, res) => {
   try {
     const query = req.query.q || '';
     const page = parseInt(req.query.page) || 1;
@@ -405,7 +389,7 @@ router.get('/search/suggestions', async (req, res) => {
 /**
  * Get media files
  */
-router.get('/media', async (req, res) => {
+router.get('/media', validatePagination, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 items
@@ -438,7 +422,7 @@ router.get('/media', async (req, res) => {
 /**
  * Get media file info
  */
-router.get('/media/:filename', async (req, res) => {
+router.get('/media/:filename', validateFilename, async (req, res) => {
   try {
     const { filename } = req.params;
     const fileInfo = await mediaService.getFileInfo(filename);
@@ -466,7 +450,7 @@ router.get('/media/:filename', async (req, res) => {
 /**
  * Upload media files (protected)
  */
-router.post('/media/upload', apiAuth, async (req, res) => {
+router.post('/media/upload', uploadLimiter, validateApiRequest, uploadSecurityCheck, async (req, res) => {
   try {
     const upload = mediaService.getMulterConfig();
     const uploadMultiple = upload.array('files', 10);
@@ -536,7 +520,7 @@ router.post('/media/upload', apiAuth, async (req, res) => {
 /**
  * Delete media file (protected)
  */
-router.delete('/media/:filename', apiAuth, async (req, res) => {
+router.delete('/media/:filename', validateApiRequest, validateFilename, async (req, res) => {
   try {
     const { filename } = req.params;
     

@@ -212,7 +212,7 @@ describe('API Routes', () => {
         .send({ title: 'Test' })
         .expect(400);
 
-      expect(response.body.error).toBe('Bad Request');
+      expect(response.body.error).toBe('Validation Error');
     });
 
     test('should handle slug conflicts', async () => {

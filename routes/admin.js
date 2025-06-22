@@ -1,6 +1,8 @@
 const express = require('express');
 const csrf = require('csurf');
 const { authService, contentService, mediaService, cacheService, pluginService, searchService } = require('../services');
+const { authLimiter, uploadLimiter, uploadSecurityCheck } = require('../middleware/security');
+const { validateLogin, validatePage, validateSlug, validatePlugin, validatePassword } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -30,7 +32,7 @@ router.get('/login', authService.redirectIfAuthenticated.bind(authService), csrf
 /**
  * Admin login form handler
  */
-router.post('/login', authService.redirectIfAuthenticated.bind(authService), csrfProtection, async (req, res) => {
+router.post('/login', authLimiter, authService.redirectIfAuthenticated.bind(authService), csrfProtection, validateLogin, async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -98,7 +100,7 @@ router.get('/', authService.requireAuth.bind(authService), csrfProtection, (req,
  * Password utility route (for generating hashes during setup)
  * This should only be used during initial setup and then removed
  */
-router.post('/setup-password', csrfProtection, async (req, res) => {
+router.post('/setup-password', authLimiter, csrfProtection, validatePassword, async (req, res) => {
   // Only allow this in development mode and if no password is already set
   if (process.env.NODE_ENV === 'production' || process.env.ADMIN_PASSWORD_HASH) {
     return res.status(404).json({ error: 'Not found' });
@@ -295,7 +297,7 @@ router.get('/pages/:slug/edit', authService.requireAuth.bind(authService), csrfP
 /**
  * Save page (create or update)
  */
-router.post('/pages/save', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+router.post('/pages/save', authService.requireAuth.bind(authService), csrfProtection, validatePage, async (req, res) => {
   try {
     const { slug, title, content, description, template, date, originalSlug } = req.body;
     const isAutosave = req.body.autosave === 'true';
@@ -469,7 +471,7 @@ router.get('/media', authService.requireAuth.bind(authService), csrfProtection, 
 /**
  * File upload handler
  */
-router.post('/media/upload', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+router.post('/media/upload', uploadLimiter, authService.requireAuth.bind(authService), csrfProtection, uploadSecurityCheck, async (req, res) => {
   try {
     const upload = mediaService.getMulterConfig();
     const uploadMultiple = upload.array('files', 10);

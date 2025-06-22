@@ -1,8 +1,8 @@
 const express = require('express');
-const helmet = require('helmet');
 const session = require('express-session');
 const nunjucks = require('nunjucks');
 const path = require('path');
+const cors = require('cors');
 require('dotenv').config();
 
 const config = require('./config/default');
@@ -11,11 +11,38 @@ const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
 const { cacheService, pluginService } = require('./services');
 
+// Security middleware
+const {
+  generalLimiter,
+  authLimiter,
+  apiLimiter,
+  securityHeaders,
+  corsOptions,
+  sanitizeInput,
+  securityLogger,
+  adminSecurityCheck
+} = require('./middleware/security');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
-app.use(helmet());
+// Trust proxy for rate limiting behind reverse proxy
+app.set('trust proxy', 1);
+
+// Security headers
+app.use(securityHeaders);
+
+// CORS configuration
+app.use(cors(corsOptions));
+
+// Security logging and monitoring
+app.use(securityLogger);
+
+// Input sanitization
+app.use(sanitizeInput);
+
+// General rate limiting
+app.use(generalLimiter);
 
 // Configure Nunjucks template engine
 const templatePath = path.join(__dirname, 'templates');
@@ -103,9 +130,9 @@ app.use('/media', express.static(path.join(__dirname, 'content'), {
   }
 }));
 
-// Routes
-app.use('/api', apiRoutes);
-app.use('/admin', adminRoutes);
+// Routes with specific rate limiting
+app.use('/api', apiLimiter, apiRoutes);
+app.use('/admin', adminSecurityCheck, adminRoutes);
 app.use('/', frontendRoutes);
 
 // 404 handler
