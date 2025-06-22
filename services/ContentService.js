@@ -4,9 +4,10 @@ const matter = require('gray-matter');
 const config = require('../config/default');
 
 class ContentService {
-  constructor(cacheService = null) {
+  constructor(cacheService = null, pluginService = null) {
     this.contentPath = config.paths.content;
     this.cache = cacheService;
+    this.plugins = pluginService;
   }
 
   /**
@@ -39,16 +40,29 @@ class ContentService {
    */
   async _loadPage(slug, pagePath) {
     try {
+      // Execute before load hook
+      if (this.plugins) {
+        const hookData = await this.plugins.beforePageLoad(slug);
+        slug = hookData.slug || slug;
+      }
+      
       const fileContent = await fs.readFile(pagePath, 'utf-8');
       const { data, content } = matter(fileContent);
       
-      return {
+      let page = {
         slug,
         path: pagePath,
         metadata: data,
         content,
         exists: true
       };
+      
+      // Execute after load hook
+      if (this.plugins) {
+        page = await this.plugins.afterPageLoad(page);
+      }
+      
+      return page;
     } catch (error) {
       if (error.code === 'ENOENT') {
         return null;
@@ -153,6 +167,14 @@ class ContentService {
    */
   async savePage(slug, metadata, content) {
     try {
+      // Execute before save hook
+      if (this.plugins) {
+        const hookData = await this.plugins.beforePageSave({ slug, metadata, content });
+        slug = hookData.slug || slug;
+        metadata = hookData.metadata || metadata;
+        content = hookData.content || content;
+      }
+      
       const pagePath = path.join(this.contentPath, slug);
       const filePath = path.join(pagePath, 'index.md');
 
@@ -180,7 +202,14 @@ class ContentService {
         this.cache.invalidatePattern('.*listPages.*');
       }
 
-      return await this.getPage(slug);
+      const savedPage = await this.getPage(slug);
+      
+      // Execute after save hook
+      if (this.plugins) {
+        await this.plugins.afterPageSave(savedPage);
+      }
+      
+      return savedPage;
     } catch (error) {
       console.error('Error saving page:', error);
       throw error;
@@ -194,6 +223,12 @@ class ContentService {
    */
   async deletePage(slug) {
     try {
+      // Execute before delete hook
+      if (this.plugins) {
+        const hookData = await this.plugins.beforePageDelete(slug);
+        slug = hookData.slug || slug;
+      }
+      
       const pagePath = path.join(this.contentPath, slug);
       
       // Check if directory exists
@@ -209,6 +244,11 @@ class ContentService {
       if (this.cache) {
         this.cache.invalidatePattern(`.*${slug}.*`);
         this.cache.invalidatePattern('.*listPages.*');
+      }
+      
+      // Execute after delete hook
+      if (this.plugins) {
+        await this.plugins.afterPageDelete(slug);
       }
       
       return true;

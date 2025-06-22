@@ -1,8 +1,9 @@
 const MarkdownIt = require('markdown-it');
 
 class MarkdownService {
-  constructor(cacheService = null, options = {}) {
+  constructor(cacheService = null, pluginService = null, options = {}) {
     this.cache = cacheService;
+    this.plugins = pluginService;
     
     // Initialize markdown-it with sensible defaults
     this.md = new MarkdownIt({
@@ -43,18 +44,33 @@ class MarkdownService {
    * @param {string} markdown - The markdown content
    * @returns {string} HTML output
    */
-  render(markdown) {
+  async render(markdown) {
     if (!markdown) return '';
+    
+    // Execute before render hook
+    if (this.plugins) {
+      const hookData = await this.plugins.beforeMarkdownRender(markdown);
+      markdown = hookData.markdown || markdown;
+    }
+    
+    let html;
     
     // Use cache if available
     if (this.cache) {
       const cacheKey = this.cache.generateKey(`markdown:${markdown}`);
-      return this.cache.cached(cacheKey, () => {
+      html = await this.cache.cached(cacheKey, () => {
         return this.md.render(markdown);
       }, 10 * 60 * 1000); // 10 minutes TTL for rendered markdown
+    } else {
+      html = this.md.render(markdown);
     }
     
-    return this.md.render(markdown);
+    // Execute after render hook
+    if (this.plugins) {
+      html = await this.plugins.afterMarkdownRender(html, markdown);
+    }
+    
+    return html;
   }
 
   /**
