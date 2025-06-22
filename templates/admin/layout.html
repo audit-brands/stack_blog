@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if page.metadata.title %}{{ page.metadata.title }} - {% endif %}{{ site.title }} Admin</title>
+    
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="generator" content="Stack Blog CMS">
+    
+    <!-- Admin CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="admin-body">
+    {% if user %}
+    <header class="admin-header">
+        <div class="admin-container">
+            <div class="admin-header-content">
+                <h1 class="admin-title">
+                    <a href="/admin">{{ site.title }} Admin</a>
+                </h1>
+                
+                <nav class="admin-nav">
+                    <ul>
+                        <li><a href="/admin" {% if currentPath == '/admin' %}class="active"{% endif %}>Dashboard</a></li>
+                        <li><a href="/admin/pages" {% if currentPath.startswith('/admin/pages') %}class="active"{% endif %}>Pages</a></li>
+                        <li><a href="/admin/media" {% if currentPath.startswith('/admin/media') %}class="active"{% endif %}>Media</a></li>
+                        <li><a href="/" target="_blank">View Site</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="admin-user">
+                    <span class="admin-username">{{ user.username }}</span>
+                    <form method="post" action="/admin/logout" class="admin-logout-form">
+                        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                        <button type="submit" class="admin-logout-btn">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="admin-main">
+        <div class="admin-container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    {% if user %}
+    <footer class="admin-footer">
+        <div class="admin-container">
+            <p>&copy; {{ new Date().getFullYear() }} {{ site.title }}. Powered by Stack Blog CMS.</p>
+        </div>
+    </footer>
+    {% endif %}
+
+    <!-- Admin JavaScript -->
+    <script src="/js/main.js"></script>
+    <script src="/js/admin.js"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

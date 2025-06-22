@@ -1,0 +1,62 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-dashboard-header">
+        <h1>Welcome back, {{ user.username }}!</h1>
+        <p>Manage your Stack Blog content from this admin panel.</p>
+    </div>
+
+    <div class="admin-dashboard-grid">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3>Quick Actions</h3>
+            </div>
+            <div class="admin-card-content">
+                <ul class="admin-quick-actions">
+                    <li><a href="/admin/pages/new" class="admin-btn admin-btn-primary">New Page</a></li>
+                    <li><a href="/admin/pages" class="admin-btn admin-btn-secondary">Manage Pages</a></li>
+                    <li><a href="/admin/media" class="admin-btn admin-btn-secondary">Media Library</a></li>
+                    <li><a href="/" target="_blank" class="admin-btn admin-btn-outline">View Site</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3>Recent Activity</h3>
+            </div>
+            <div class="admin-card-content">
+                <p class="admin-text-muted">Activity tracking will be implemented in a future update.</p>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3>System Information</h3>
+            </div>
+            <div class="admin-card-content">
+                <dl class="admin-definition-list">
+                    <dt>Login Time</dt>
+                    <dd>{{ user.loginTime | date }}</dd>
+                    
+                    <dt>Session</dt>
+                    <dd>Active</dd>
+                    
+                    <dt>Role</dt>
+                    <dd>{{ user.role | title }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3>Site Statistics</h3>
+            </div>
+            <div class="admin-card-content">
+                <p class="admin-text-muted">Site statistics will be implemented in a future update.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
