@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.metadata.title }} | {{ site.title }}</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .cache-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .cache-stat:last-child {
+            border-bottom: none;
+        }
+        
+        .cache-stat-label {
+            font-weight: 600;
+            color: #343a40;
+        }
+        
+        .cache-stat-value {
+            color: #6c757d;
+        }
+        
+        .cache-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .cache-status.enabled {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .cache-status.disabled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .cache-entries {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .cache-entry {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.9rem;
+        }
+        
+        .cache-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .cache-entry-key {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+        
+        .cache-entry-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+        
+        .cache-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .progress-ring {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+        }
+        
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring circle {
+            fill: transparent;
+            stroke-width: 4;
+        }
+        
+        .progress-ring .bg {
+            stroke: #e9ecef;
+        }
+        
+        .progress-ring .progress {
+            stroke: #0066cc;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s ease;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #343a40;
+        }
+    </style>
+</head>
+<body class="admin-body">
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="admin-container">
+            <div class="admin-header-content">
+                <h1 class="admin-title">
+                    <a href="/admin">{{ site.title }} Admin</a>
+                </h1>
+                
+                <nav class="admin-nav">
+                    <ul>
+                        <li><a href="/admin">Dashboard</a></li>
+                        <li><a href="/admin/pages">Pages</a></li>
+                        <li><a href="/admin/media">Media</a></li>
+                        <li><a href="/admin/cache" class="active">Cache</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="admin-user">
+                    <span class="admin-username">{{ user.username }}</span>
+                    <form method="POST" action="/admin/logout" class="admin-logout-form">
+                        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                        <button type="submit" class="admin-logout-btn">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <div class="admin-dashboard-header">
+                <h1>Cache Management</h1>
+                <p>Monitor and manage the application cache for improved performance.</p>
+            </div>
+
+            <!-- Success Messages -->
+            {% if request.query.cleared %}
+            <div class="admin-alert admin-alert-success">
+                <h3>Cache Cleared</h3>
+                <p>All cache entries have been cleared successfully.</p>
+            </div>
+            {% endif %}
+
+            {% if request.query.preloaded %}
+            <div class="admin-alert admin-alert-success">
+                <h3>Cache Preloaded</h3>
+                <p>Content cache has been preloaded successfully.</p>
+            </div>
+            {% endif %}
+
+            <!-- Cache Actions -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3>Cache Actions</h3>
+                </div>
+                <div class="admin-card-content">
+                    <div class="cache-actions">
+                        <form method="POST" action="/admin/cache/clear" style="display: inline;">
+                            <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                            <button type="submit" class="admin-btn admin-btn-outline" 
+                                    onclick="return confirm('Are you sure you want to clear all cache? This may temporarily slow down the site.')">
+                                Clear All Cache
+                            </button>
+                        </form>
+                        
+                        <form method="POST" action="/admin/cache/preload" style="display: inline;">
+                            <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                            <button type="submit" class="admin-btn admin-btn-secondary">
+                                Preload Content Cache
+                            </button>
+                        </form>
+                        
+                        <button onclick="window.location.reload()" class="admin-btn admin-btn-primary">
+                            Refresh Stats
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cache Statistics -->
+            <div class="admin-dashboard-grid">
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h3>Cache Status</h3>
+                    </div>
+                    <div class="admin-card-content">
+                        <div class="cache-stat">
+                            <span class="cache-stat-label">Status</span>
+                            <span class="cache-status {{ 'enabled' if stats.enabled else 'disabled' }}">
+                                {{ 'Enabled' if stats.enabled else 'Disabled' }}
+                            </span>
+                        </div>
+                        <div class="cache-stat">
+                            <span class="cache-stat-label">Cache Size</span>
+                            <span class="cache-stat-value">{{ stats.size }} / {{ stats.maxSize }} entries</span>
+                        </div>
+                        <div class="cache-stat">
+                            <span class="cache-stat-label">Cache TTL</span>
+                            <span class="cache-stat-value">{{ (stats.ttl / 1000 / 60) | round(1) }} minutes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h3>Performance Metrics</h3>
+                    </div>
+                    <div class="admin-card-content">
+                        <div style="display: flex; align-items: center; gap: 2rem;">
+                            <div class="progress-ring">
+                                <svg width="60" height="60">
+                                    <circle class="bg" cx="30" cy="30" r="26"></circle>
+                                    <circle class="progress" cx="30" cy="30" r="26" 
+                                            stroke-dasharray="{{ (163.4 * stats.hitRate.replace('%', '') / 100) | round(1) }} 163.4"
+                                            stroke-dashoffset="0"></circle>
+                                </svg>
+                                <div class="progress-text">{{ stats.hitRate }}</div>
+                            </div>
+                            <div>
+                                <div class="cache-stat">
+                                    <span class="cache-stat-label">Cache Hits</span>
+                                    <span class="cache-stat-value">{{ stats.hits }}</span>
+                                </div>
+                                <div class="cache-stat">
+                                    <span class="cache-stat-label">Cache Misses</span>
+                                    <span class="cache-stat-value">{{ stats.misses }}</span>
+                                </div>
+                                <div class="cache-stat">
+                                    <span class="cache-stat-label">Hit Rate</span>
+                                    <span class="cache-stat-value">{{ stats.hitRate }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cache Entries -->
+            {% if stats.entries.length > 0 %}
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3>Cache Entries ({{ stats.entries.length }})</h3>
+                </div>
+                <div class="admin-card-content" style="padding: 0;">
+                    <div class="cache-entries">
+                        {% for entry in stats.entries %}
+                        <div class="cache-entry">
+                            <div class="cache-entry-key">{{ entry.key }}</div>
+                            <div class="cache-entry-meta">
+                                <div><strong>Created:</strong> {{ entry.created | date }}</div>
+                                <div><strong>Last Access:</strong> {{ entry.accessed | date }}</div>
+                                <div><strong>Hits:</strong> {{ entry.hits }}</div>
+                                <div><strong>Expires In:</strong> {{ (entry.expiresIn / 1000 / 60) | round(1) }} min</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="admin-card">
+                <div class="admin-card-content" style="text-align: center; padding: 3rem;">
+                    {% if not stats.enabled %}
+                    <h3>Cache Disabled</h3>
+                    <p class="admin-text-muted">Caching is disabled in test mode or when not configured.</p>
+                    {% else %}
+                    <h3>No Cache Entries</h3>
+                    <p class="admin-text-muted">No content has been cached yet. Visit some pages or preload the cache to see entries here.</p>
+                    <form method="POST" action="/admin/cache/preload" style="display: inline;">
+                        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                        <button type="submit" class="admin-btn admin-btn-primary">Preload Content Cache</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- Admin Footer -->
+    <footer class="admin-footer">
+        <div class="admin-container">
+            <p>&copy; 2024 {{ site.title }}. Powered by Stack Blog.</p>
+        </div>
+    </footer>
+
+    <script src="/js/admin.js"></script>
+    <script>
+        // Auto-refresh cache stats every 30 seconds
+        let autoRefresh = true;
+        
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const button = document.getElementById('auto-refresh-btn');
+            button.textContent = autoRefresh ? 'Disable Auto-refresh' : 'Enable Auto-refresh';
+            
+            if (autoRefresh) {
+                scheduleRefresh();
+            }
+        }
+        
+        function scheduleRefresh() {
+            if (autoRefresh) {
+                setTimeout(() => {
+                    if (autoRefresh) {
+                        window.location.reload();
+                    }
+                }, 30000);
+            }
+        }
+        
+        // Start auto-refresh
+        scheduleRefresh();
+    </script>
+</body>
+</html>

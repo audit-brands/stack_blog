@@ -8,6 +8,7 @@ require('dotenv').config();
 const config = require('./config/default');
 const frontendRoutes = require('./routes/frontend');
 const adminRoutes = require('./routes/admin');
+const { cacheService } = require('./services');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -61,6 +62,12 @@ app.use(session({
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Cache middleware for frontend pages
+app.use(cacheService.middleware({
+  maxAge: 300, // 5 minutes
+  cacheControl: 'public'
+}));
 
 // Static file serving
 app.use(express.static(path.join(__dirname, 'public')));
