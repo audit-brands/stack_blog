@@ -1,6 +1,6 @@
 const express = require('express');
 const csrf = require('csurf');
-const { authService, contentService, mediaService, cacheService, pluginService } = require('../services');
+const { authService, contentService, mediaService, cacheService, pluginService, searchService } = require('../services');
 
 const router = express.Router();
 
@@ -753,6 +753,101 @@ router.post('/plugins/create', authService.requireAuth.bind(authService), csrfPr
     console.error('Error creating plugin:', error);
     res.status(500).json({
       error: 'Failed to create plugin',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Search management page
+ */
+router.get('/search', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
+  const user = authService.getAuthenticatedUser(req.session);
+  const stats = searchService.getStats();
+  
+  res.render('admin/search', {
+    page: {
+      metadata: {
+        title: 'Search Management'
+      }
+    },
+    site: {
+      title: 'Stack Blog',
+      description: 'Admin Panel'
+    },
+    user,
+    stats,
+    csrfToken: req.csrfToken(),
+    currentPath: req.path
+  });
+});
+
+/**
+ * Rebuild search index
+ */
+router.post('/search/rebuild', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    await searchService.buildIndex();
+    
+    if (req.xhr || req.headers.accept === 'application/json') {
+      return res.json({
+        success: true,
+        message: 'Search index rebuilt successfully',
+        stats: searchService.getStats()
+      });
+    }
+    
+    res.redirect('/admin/search?rebuilt=true');
+  } catch (error) {
+    console.error('Error rebuilding search index:', error);
+    res.status(500).json({
+      error: 'Failed to rebuild search index',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Clear search index
+ */
+router.post('/search/clear', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
+  try {
+    searchService.clearIndex();
+    
+    if (req.xhr || req.headers.accept === 'application/json') {
+      return res.json({
+        success: true,
+        message: 'Search index cleared successfully'
+      });
+    }
+    
+    res.redirect('/admin/search?cleared=true');
+  } catch (error) {
+    console.error('Error clearing search index:', error);
+    res.status(500).json({
+      error: 'Failed to clear search index',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Search suggestions API endpoint
+ */
+router.get('/search/suggestions', authService.requireAuth.bind(authService), async (req, res) => {
+  try {
+    const { q, limit } = req.query;
+    
+    if (!q) {
+      return res.json([]);
+    }
+    
+    const suggestions = await searchService.getSuggestions(q, parseInt(limit) || 5);
+    res.json(suggestions);
+  } catch (error) {
+    console.error('Error getting search suggestions:', error);
+    res.status(500).json({
+      error: 'Failed to get suggestions',
       message: error.message
     });
   }
