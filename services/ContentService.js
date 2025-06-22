@@ -36,26 +36,88 @@ class ContentService {
 
   /**
    * Get all pages from the content directory
-   * @returns {Promise<Array>} Array of page objects
+   * @param {Object} options - Options for listing pages
+   * @param {number} options.page - Page number for pagination
+   * @param {number} options.limit - Items per page
+   * @param {string} options.search - Search term
+   * @returns {Promise<Object>} Object with pages array and pagination info
    */
-  async listPages() {
+  async listPages(options = {}) {
     try {
+      const { page = 1, limit = 10, search = '' } = options;
       const entries = await fs.readdir(this.contentPath, { withFileTypes: true });
-      const pages = [];
+      const allPages = [];
 
       for (const entry of entries) {
         if (entry.isDirectory()) {
-          const page = await this.getPage(entry.name);
-          if (page) {
-            pages.push(page);
+          const pageData = await this.getPage(entry.name);
+          if (pageData) {
+            // Add file stats for sorting
+            const filePath = path.join(this.contentPath, entry.name, 'index.md');
+            try {
+              const stats = await fs.stat(filePath);
+              pageData.lastModified = stats.mtime;
+              pageData.created = stats.birthtime;
+            } catch (statError) {
+              pageData.lastModified = new Date();
+              pageData.created = new Date();
+            }
+            allPages.push(pageData);
           }
         }
       }
 
-      return pages;
+      // Filter pages based on search term
+      let filteredPages = allPages;
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredPages = allPages.filter(page => {
+          const title = (page.metadata.title || '').toLowerCase();
+          const content = (page.content || '').toLowerCase();
+          const slug = (page.slug || '').toLowerCase();
+          return title.includes(searchLower) || 
+                 content.includes(searchLower) || 
+                 slug.includes(searchLower);
+        });
+      }
+
+      // Sort by last modified date (newest first)
+      filteredPages.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+
+      // Calculate pagination
+      const total = filteredPages.length;
+      const totalPages = Math.ceil(total / limit);
+      const offset = (page - 1) * limit;
+      const paginatedPages = filteredPages.slice(offset, offset + limit);
+
+      return {
+        pages: paginatedPages,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          total,
+          limit,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+          nextPage: page < totalPages ? page + 1 : null,
+          prevPage: page > 1 ? page - 1 : null
+        }
+      };
     } catch (error) {
       console.error('Error listing pages:', error);
-      return [];
+      return {
+        pages: [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 0,
+          total: 0,
+          limit,
+          hasNext: false,
+          hasPrev: false,
+          nextPage: null,
+          prevPage: null
+        }
+      };
     }
   }
 
@@ -156,7 +218,8 @@ class ContentService {
    * @returns {Promise<Object>} Nested page structure
    */
   async getPageHierarchy() {
-    const pages = await this.listPages();
+    const result = await this.listPages({ limit: 1000 }); // Get all pages
+    const pages = result.pages;
     
     // Sort pages by title
     pages.sort((a, b) => {

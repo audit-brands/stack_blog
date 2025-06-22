@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.metadata.title }} | {{ site.title }}</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .page-edit-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .page-edit-main {
+            min-width: 0; /* Allow content to shrink */
+        }
+        
+        .page-edit-sidebar {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+        
+        .markdown-toolbar {
+            background: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+        
+        .markdown-toolbar button {
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 3px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .markdown-toolbar button:hover {
+            background: #e9ecef;
+        }
+        
+        .markdown-editor {
+            border-radius: 0 0 4px 4px !important;
+            border-top: none !important;
+            min-height: 400px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            resize: vertical;
+        }
+        
+        .field-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .char-count {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .page-edit-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .page-edit-sidebar {
+                position: static;
+            }
+            
+            .field-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="admin-body">
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="admin-container">
+            <div class="admin-header-content">
+                <h1 class="admin-title">
+                    <a href="/admin">{{ site.title }} Admin</a>
+                </h1>
+                
+                <nav class="admin-nav">
+                    <ul>
+                        <li><a href="/admin">Dashboard</a></li>
+                        <li><a href="/admin/pages" class="active">Pages</a></li>
+                        <li><a href="/admin/media">Media</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="admin-user">
+                    <span class="admin-username">{{ user.username }}</span>
+                    <form method="POST" action="/admin/logout" class="admin-logout-form">
+                        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                        <button type="submit" class="admin-logout-btn">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <div class="admin-dashboard-header">
+                <h1>{{ page.metadata.title }}</h1>
+                <p>{% if editPage %}Edit this page's content and metadata.{% else %}Create a new page for your site.{% endif %}</p>
+            </div>
+
+            <form method="POST" action="/admin/pages/save" data-autosave="true">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                {% if editPage %}
+                <input type="hidden" name="originalSlug" value="{{ editPage.slug }}">
+                {% endif %}
+                
+                <div class="page-edit-container">
+                    <!-- Main Editing Area -->
+                    <div class="page-edit-main">
+                        <!-- Title Field -->
+                        <div class="admin-card">
+                            <div class="admin-card-header">
+                                <h3>Page Title</h3>
+                            </div>
+                            <div class="admin-card-content">
+                                <div class="admin-form-group">
+                                    <input type="text" name="title" id="title" 
+                                           value="{{ editPage.metadata.title if editPage else '' }}" 
+                                           placeholder="Enter page title..."
+                                           style="font-size: 1.25rem; font-weight: 600;"
+                                           required>
+                                    <div class="admin-form-help">
+                                        This will be the main heading for your page and appear in search results.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content Editor -->
+                        <div class="admin-card">
+                            <div class="admin-card-header">
+                                <h3>Page Content</h3>
+                            </div>
+                            <div class="admin-card-content" style="padding: 0;">
+                                <div class="markdown-toolbar">
+                                    <button type="button" onclick="insertMarkdown('**', '**')" title="Bold (Ctrl+B)">
+                                        <strong>B</strong>
+                                    </button>
+                                    <button type="button" onclick="insertMarkdown('*', '*')" title="Italic (Ctrl+I)">
+                                        <em>I</em>
+                                    </button>
+                                    <button type="button" onclick="insertMarkdown('`', '`')" title="Code">
+                                        Code
+                                    </button>
+                                    <button type="button" onclick="insertMarkdown('\n```\n', '\n```\n')" title="Code Block">
+                                        Block
+                                    </button>
+                                    <button type="button" onclick="insertMarkdown('[', '](url)')" title="Link (Ctrl+K)">
+                                        Link
+                                    </button>
+                                    <button type="button" onclick="insertMarkdown('![', '](url)')" title="Image">
+                                        Image
+                                    </button>
+                                    <button type="button" onclick="insertMarkdown('\n## ', '')" title="Heading">
+                                        H2
+                                    </button>
+                                    <button type="button" onclick="insertMarkdown('\n### ', '')" title="Heading">
+                                        H3
+                                    </button>
+                                    <button type="button" onclick="insertMarkdown('\n- ', '')" title="List">
+                                        List
+                                    </button>
+                                    <button type="button" onclick="insertMarkdown('\n> ', '')" title="Quote">
+                                        Quote
+                                    </button>
+                                </div>
+                                <textarea name="content" id="content" class="markdown-editor" 
+                                          placeholder="Write your page content in Markdown..." 
+                                          data-markdown="true"
+                                          required>{{ editPage.content if editPage else '' }}</textarea>
+                                <div class="char-count" style="padding: 0.5rem 1rem; background: #f8f9fa; border-top: 1px solid #dee2e6;">
+                                    <span id="content-char-count">0</span> characters, 
+                                    <span id="content-word-count">0</span> words
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="page-edit-sidebar">
+                        <!-- Publish Settings -->
+                        <div class="admin-card-header">
+                            <h3>Publish Settings</h3>
+                        </div>
+                        <div class="admin-card-content">
+                            <div class="form-actions">
+                                <button type="submit" class="admin-btn admin-btn-primary">
+                                    {% if editPage %}Update Page{% else %}Create Page{% endif %}
+                                </button>
+                                <a href="/admin/pages" class="admin-btn admin-btn-outline">Cancel</a>
+                            </div>
+                            {% if editPage %}
+                            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dee2e6;">
+                                <a href="/{{ editPage.slug }}" target="_blank" class="admin-btn admin-btn-secondary" style="width: 100%;">
+                                    Preview Page
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Page Settings -->
+                        <div class="admin-card-header" style="border-top: 1px solid #dee2e6; margin-top: 0;">
+                            <h3>Page Settings</h3>
+                        </div>
+                        <div class="admin-card-content">
+                            <div class="admin-form-group">
+                                <label for="slug">Page Slug (URL)</label>
+                                <input type="text" name="slug" id="slug" 
+                                       value="{{ editPage.slug if editPage else '' }}" 
+                                       placeholder="auto-generated-from-title">
+                                <div class="admin-form-help">
+                                    Leave blank to auto-generate from title. This determines the page URL.
+                                </div>
+                            </div>
+
+                            <div class="admin-form-group">
+                                <label for="description">Description</label>
+                                <textarea name="description" id="description" rows="3" 
+                                          placeholder="Brief description for SEO...">{{ editPage.metadata.description if editPage else '' }}</textarea>
+                                <div class="admin-form-help">
+                                    Used for search engine results and social media previews.
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <div class="admin-form-group">
+                                    <label for="template">Template</label>
+                                    <select name="template" id="template">
+                                        <option value="default" {{ 'selected' if not editPage or editPage.metadata.template == 'default' }}>Default</option>
+                                        <option value="page" {{ 'selected' if editPage and editPage.metadata.template == 'page' }}>Page</option>
+                                        <option value="post" {{ 'selected' if editPage and editPage.metadata.template == 'post' }}>Post</option>
+                                    </select>
+                                </div>
+
+                                <div class="admin-form-group">
+                                    <label for="date">Publish Date</label>
+                                    <input type="date" name="date" id="date" 
+                                           value="{{ editPage.metadata.date if editPage else '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Page Info (for existing pages) -->
+                        {% if editPage %}
+                        <div class="admin-card-header" style="border-top: 1px solid #dee2e6; margin-top: 0;">
+                            <h3>Page Information</h3>
+                        </div>
+                        <div class="admin-card-content">
+                            <dl class="admin-definition-list">
+                                <dt>Created</dt>
+                                <dd>{{ editPage.created | date }}</dd>
+                                
+                                <dt>Last Modified</dt>
+                                <dd>{{ editPage.lastModified | date }}</dd>
+                                
+                                <dt>File Path</dt>
+                                <dd class="admin-text-small" style="word-break: break-all;">{{ editPage.path }}</dd>
+                            </dl>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Admin Footer -->
+    <footer class="admin-footer">
+        <div class="admin-container">
+            <p>&copy; 2024 {{ site.title }}. Powered by Stack Blog.</p>
+        </div>
+    </footer>
+
+    <script src="/js/admin.js"></script>
+    <script>
+        // Page-specific JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            const titleInput = document.getElementById('title');
+            const slugInput = document.getElementById('slug');
+            const contentTextarea = document.getElementById('content');
+            const charCountSpan = document.getElementById('content-char-count');
+            const wordCountSpan = document.getElementById('content-word-count');
+
+            // Auto-generate slug from title
+            titleInput.addEventListener('input', function() {
+                if (!slugInput.value || slugInput.getAttribute('data-manual') !== 'true') {
+                    const slug = createSlug(this.value);
+                    slugInput.value = slug;
+                }
+            });
+
+            // Mark slug as manually edited
+            slugInput.addEventListener('input', function() {
+                this.setAttribute('data-manual', 'true');
+            });
+
+            // Update character and word count
+            function updateCounts() {
+                const content = contentTextarea.value;
+                charCountSpan.textContent = content.length;
+                
+                const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+                wordCountSpan.textContent = words;
+            }
+
+            contentTextarea.addEventListener('input', updateCounts);
+            updateCounts(); // Initial count
+
+            // Set current date if creating new page
+            {% if not editPage %}
+            const dateInput = document.getElementById('date');
+            if (!dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+            {% endif %}
+        });
+
+        function createSlug(title) {
+            return title
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        function insertMarkdown(before, after) {
+            const textarea = document.getElementById('content');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            
+            const replacement = before + selectedText + after;
+            textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+            
+            // Set cursor position
+            const newCursorPos = start + before.length + selectedText.length;
+            textarea.selectionStart = newCursorPos;
+            textarea.selectionEnd = newCursorPos;
+            textarea.focus();
+            
+            // Trigger input event for autosave
+            textarea.dispatchEvent(new Event('input'));
+        }
+    </script>
+</body>
+</html>

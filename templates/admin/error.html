@@ -1,0 +1,36 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-dashboard-header">
+        <h1>Error</h1>
+        <p>An error occurred while processing your request.</p>
+    </div>
+
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3>Error Details</h3>
+        </div>
+        <div class="admin-card-content">
+            <div class="admin-alert admin-alert-error">
+                <h3>Something went wrong</h3>
+                <p>We encountered an error while processing your request. Please try again later.</p>
+                
+                {% if error and error.message %}
+                <details style="margin-top: 1rem;">
+                    <summary style="cursor: pointer; font-weight: 600;">Technical Details</summary>
+                    <pre style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin-top: 0.5rem; overflow: auto; font-size: 0.85rem;">{{ error.message }}
+{% if error.stack %}
+{{ error.stack }}{% endif %}</pre>
+                </details>
+                {% endif %}
+            </div>
+            
+            <div style="margin-top: 1.5rem;">
+                <a href="/admin" class="admin-btn admin-btn-primary">Back to Dashboard</a>
+                <button onclick="history.back()" class="admin-btn admin-btn-outline">Go Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

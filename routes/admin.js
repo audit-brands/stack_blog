@@ -1,6 +1,6 @@
 const express = require('express');
 const csrf = require('csurf');
-const { authService } = require('../services');
+const { authService, contentService } = require('../services');
 
 const router = express.Router();
 
@@ -153,6 +153,258 @@ router.get('/setup', (req, res) => {
     },
     currentPath: req.path
   });
+});
+
+/**
+ * Pages listing page
+ */
+router.get('/pages', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const user = authService.getAuthenticatedUser(req.session);
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const search = req.query.search || '';
+    const savedMessage = req.query.saved || '';
+    const deletedMessage = req.query.deleted || '';
+    
+    const result = await contentService.listPages({
+      page,
+      limit,
+      search
+    });
+    
+    res.render('admin/pages', {
+      page: {
+        metadata: {
+          title: 'Manage Pages'
+        }
+      },
+      site: {
+        title: 'Stack Blog',
+        description: 'Admin Panel'
+      },
+      user,
+      pages: result.pages,
+      pagination: result.pagination,
+      search,
+      savedMessage,
+      deletedMessage,
+      csrfToken: req.csrfToken(),
+      currentPath: req.path
+    });
+  } catch (error) {
+    console.error('Error loading pages:', error);
+    res.status(500).render('admin/error', {
+      page: {
+        metadata: {
+          title: 'Error'
+        }
+      },
+      site: {
+        title: 'Stack Blog',
+        description: 'Admin Panel'
+      },
+      error: process.env.NODE_ENV === 'development' ? error : null,
+      currentPath: req.path
+    });
+  }
+});
+
+/**
+ * New page creation form
+ */
+router.get('/pages/new', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
+  const user = authService.getAuthenticatedUser(req.session);
+  
+  res.render('admin/page-edit', {
+    page: {
+      metadata: {
+        title: 'Create New Page'
+      }
+    },
+    site: {
+      title: 'Stack Blog',
+      description: 'Admin Panel'
+    },
+    user,
+    editPage: null, // New page
+    csrfToken: req.csrfToken(),
+    currentPath: req.path
+  });
+});
+
+/**
+ * Edit existing page form
+ */
+router.get('/pages/:slug/edit', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const user = authService.getAuthenticatedUser(req.session);
+    const { slug } = req.params;
+    
+    const editPage = await contentService.getPage(slug);
+    
+    if (!editPage) {
+      return res.status(404).render('admin/error', {
+        page: {
+          metadata: {
+            title: 'Page Not Found'
+          }
+        },
+        site: {
+          title: 'Stack Blog',
+          description: 'Admin Panel'
+        },
+        error: { message: `Page "${slug}" not found` },
+        currentPath: req.path
+      });
+    }
+    
+    res.render('admin/page-edit', {
+      page: {
+        metadata: {
+          title: `Edit: ${editPage.metadata.title}`
+        }
+      },
+      site: {
+        title: 'Stack Blog',
+        description: 'Admin Panel'
+      },
+      user,
+      editPage,
+      csrfToken: req.csrfToken(),
+      currentPath: req.path
+    });
+  } catch (error) {
+    console.error('Error loading page for editing:', error);
+    res.status(500).render('admin/error', {
+      page: {
+        metadata: {
+          title: 'Error'
+        }
+      },
+      site: {
+        title: 'Stack Blog',
+        description: 'Admin Panel'
+      },
+      error: process.env.NODE_ENV === 'development' ? error : null,
+      currentPath: req.path
+    });
+  }
+});
+
+/**
+ * Save page (create or update)
+ */
+router.post('/pages/save', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const { slug, title, content, description, template, date, originalSlug } = req.body;
+    const isAutosave = req.body.autosave === 'true';
+    
+    // Validate required fields
+    if (!title || !content) {
+      return res.status(400).json({
+        error: 'Title and content are required',
+        field: !title ? 'title' : 'content'
+      });
+    }
+    
+    // Create slug from title if not provided
+    let finalSlug = slug || contentService.createSlug(title);
+    
+    // Check if slug exists (for new pages or if slug changed)
+    if (!originalSlug || originalSlug !== finalSlug) {
+      const slugExists = await contentService.slugExists(finalSlug);
+      if (slugExists) {
+        return res.status(400).json({
+          error: 'A page with this slug already exists',
+          field: 'slug',
+          suggestion: contentService.createSlug(`${title}-${Date.now()}`)
+        });
+      }
+    }
+    
+    // Prepare metadata
+    const metadata = {
+      title,
+      description: description || '',
+      template: template || 'default',
+      date: date || new Date().toISOString().split('T')[0]
+    };
+    
+    // Save the page
+    const savedPage = await contentService.savePage(finalSlug, metadata, content);
+    
+    // If slug changed, delete the old page
+    if (originalSlug && originalSlug !== finalSlug) {
+      await contentService.deletePage(originalSlug);
+    }
+    
+    if (isAutosave) {
+      return res.json({
+        success: true,
+        message: 'Page auto-saved',
+        slug: savedPage.slug
+      });
+    }
+    
+    // Regular save - redirect to pages list with success message
+    res.redirect('/admin/pages?saved=' + encodeURIComponent(savedPage.metadata.title));
+  } catch (error) {
+    console.error('Error saving page:', error);
+    
+    if (req.body.autosave === 'true') {
+      return res.status(500).json({
+        error: 'Auto-save failed',
+        message: error.message
+      });
+    }
+    
+    res.status(500).render('admin/error', {
+      page: {
+        metadata: {
+          title: 'Save Error'
+        }
+      },
+      site: {
+        title: 'Stack Blog',
+        description: 'Admin Panel'
+      },
+      error: process.env.NODE_ENV === 'development' ? error : null,
+      currentPath: req.path
+    });
+  }
+});
+
+/**
+ * Delete page
+ */
+router.post('/pages/:slug/delete', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    
+    const page = await contentService.getPage(slug);
+    if (!page) {
+      return res.status(404).json({
+        error: 'Page not found'
+      });
+    }
+    
+    const deleted = await contentService.deletePage(slug);
+    
+    if (deleted) {
+      res.redirect('/admin/pages?deleted=' + encodeURIComponent(page.metadata.title));
+    } else {
+      res.status(500).json({
+        error: 'Failed to delete page'
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting page:', error);
+    res.status(500).json({
+      error: 'Delete failed',
+      message: error.message
+    });
+  }
 });
 
 module.exports = router;
