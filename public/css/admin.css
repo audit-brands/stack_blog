@@ -1,0 +1,460 @@
+/* Stack Blog Admin CSS */
+
+/* Admin Body */
+.admin-body {
+    background-color: #f8f9fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Admin Header */
+.admin-header {
+    background-color: #343a40;
+    color: white;
+    padding: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-title {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.admin-title a {
+    color: white;
+    text-decoration: none;
+}
+
+.admin-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 2rem;
+}
+
+.admin-nav a {
+    color: #adb5bd;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.admin-nav a:hover,
+.admin-nav a.active {
+    color: white;
+}
+
+.admin-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-username {
+    color: #adb5bd;
+    font-size: 0.9rem;
+}
+
+.admin-logout-form {
+    margin: 0;
+}
+
+.admin-logout-btn {
+    background: none;
+    border: 1px solid #6c757d;
+    color: #adb5bd;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.admin-logout-btn:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Admin Main */
+.admin-main {
+    min-height: calc(100vh - 140px);
+    padding: 2rem 0;
+}
+
+/* Admin Footer */
+.admin-footer {
+    background-color: #e9ecef;
+    padding: 1rem 0;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.9rem;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Admin Login */
+.admin-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.admin-login-container {
+    background: white;
+    padding: 3rem;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    width: 100%;
+    max-width: 400px;
+}
+
+.admin-login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.admin-login-header h1 {
+    color: #343a40;
+    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+}
+
+.admin-login-header h2 {
+    color: #6c757d;
+    font-weight: normal;
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.admin-login-form {
+    margin-bottom: 1.5rem;
+}
+
+.admin-login-footer {
+    text-align: center;
+}
+
+/* Admin Setup */
+.admin-setup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.admin-setup-container {
+    background: white;
+    padding: 3rem;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    width: 100%;
+    max-width: 500px;
+}
+
+.admin-setup-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.admin-setup-header h1 {
+    color: #343a40;
+    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+}
+
+.admin-setup-header h2 {
+    color: #6c757d;
+    font-weight: normal;
+    font-size: 1.25rem;
+    margin: 0 0 1rem 0;
+}
+
+.admin-setup-header p {
+    color: #6c757d;
+    margin: 0;
+}
+
+.admin-code-block {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 1rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
+}
+
+.admin-setup-actions {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+/* Admin Dashboard */
+.admin-dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.admin-dashboard-header h1 {
+    color: #343a40;
+    margin-bottom: 0.5rem;
+}
+
+.admin-dashboard-header p {
+    color: #6c757d;
+    margin: 0;
+}
+
+.admin-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Admin Cards */
+.admin-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.admin-card-header {
+    background-color: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.admin-card-header h3 {
+    margin: 0;
+    color: #343a40;
+    font-size: 1.1rem;
+}
+
+.admin-card-content {
+    padding: 1.5rem;
+}
+
+/* Admin Forms */
+.admin-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.admin-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #343a40;
+}
+
+.admin-form-group input,
+.admin-form-group textarea,
+.admin-form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-form-group input:focus,
+.admin-form-group textarea:focus,
+.admin-form-group select:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.25);
+}
+
+.admin-form-help {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* Admin Buttons */
+.admin-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: none;
+}
+
+.admin-btn-primary {
+    background-color: #0066cc;
+    border-color: #0066cc;
+    color: white;
+}
+
+.admin-btn-primary:hover {
+    background-color: #0052a3;
+    border-color: #0052a3;
+    text-decoration: none;
+}
+
+.admin-btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.admin-btn-secondary:hover {
+    background-color: #545b62;
+    border-color: #545b62;
+    text-decoration: none;
+}
+
+.admin-btn-outline {
+    border-color: #6c757d;
+    color: #6c757d;
+}
+
+.admin-btn-outline:hover {
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+}
+
+.admin-btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* Admin Quick Actions */
+.admin-quick-actions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.admin-quick-actions li {
+    margin-bottom: 0.75rem;
+}
+
+.admin-quick-actions li:last-child {
+    margin-bottom: 0;
+}
+
+.admin-quick-actions .admin-btn {
+    width: 100%;
+    text-align: left;
+}
+
+/* Admin Definition List */
+.admin-definition-list {
+    margin: 0;
+}
+
+.admin-definition-list dt {
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.25rem;
+}
+
+.admin-definition-list dd {
+    margin: 0 0 1rem 0;
+    color: #6c757d;
+}
+
+.admin-definition-list dd:last-child {
+    margin-bottom: 0;
+}
+
+/* Admin Alerts */
+.admin-alert {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+}
+
+.admin-alert-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.admin-alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.admin-alert h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+/* Admin Utilities */
+.admin-text-muted {
+    color: #6c757d;
+}
+
+.admin-text-small {
+    font-size: 0.85rem;
+}
+
+.admin-link {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.admin-link:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-header-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .admin-nav ul {
+        gap: 1rem;
+    }
+    
+    .admin-user {
+        order: -1;
+    }
+    
+    .admin-login-container,
+    .admin-setup-container {
+        margin: 1rem;
+        padding: 2rem;
+    }
+    
+    .admin-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-code-block {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: stretch;
+    }
+}

@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="error-page">
+    <h1>500 - Server Error</h1>
+    <p>Sorry, something went wrong on our server.</p>
+    
+    <div class="error-actions">
+        <a href="/" class="button">Go Home</a>
+        <a href="javascript:history.back()" class="button button-secondary">Go Back</a>
+    </div>
+    
+    {% if error %}
+    <details class="error-details">
+        <summary>Technical Details (Development Mode)</summary>
+        <pre><code>{{ error.stack }}</code></pre>
+    </details>
+    {% endif %}
+</div>
+{% endblock %}
