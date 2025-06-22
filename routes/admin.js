@@ -1,6 +1,6 @@
 const express = require('express');
 const csrf = require('csurf');
-const { authService, contentService, mediaService, cacheService } = require('../services');
+const { authService, contentService, mediaService, cacheService, pluginService } = require('../services');
 
 const router = express.Router();
 
@@ -669,6 +669,90 @@ router.post('/cache/preload', authService.requireAuth.bind(authService), csrfPro
     console.error('Error preloading cache:', error);
     res.status(500).json({
       error: 'Failed to preload cache',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Plugins management page
+ */
+router.get('/plugins', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
+  const user = authService.getAuthenticatedUser(req.session);
+  const plugins = pluginService.getAllPlugins();
+  const hooks = pluginService.getHooksInfo();
+  
+  res.render('admin/plugins', {
+    page: {
+      metadata: {
+        title: 'Plugin Management'
+      }
+    },
+    site: {
+      title: 'Stack Blog',
+      description: 'Admin Panel'
+    },
+    user,
+    plugins,
+    hooks,
+    csrfToken: req.csrfToken(),
+    currentPath: req.path
+  });
+});
+
+/**
+ * Reload plugins
+ */
+router.post('/plugins/reload', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    await pluginService.reload();
+    
+    if (req.xhr || req.headers.accept === 'application/json') {
+      return res.json({
+        success: true,
+        message: 'Plugins reloaded successfully',
+        count: pluginService.getAllPlugins().length
+      });
+    }
+    
+    res.redirect('/admin/plugins?reloaded=true');
+  } catch (error) {
+    console.error('Error reloading plugins:', error);
+    res.status(500).json({
+      error: 'Failed to reload plugins',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Create new plugin
+ */
+router.post('/plugins/create', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const { name, description, author } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({
+        error: 'Plugin name is required'
+      });
+    }
+    
+    const pluginPath = await pluginService.createPlugin(name, { description, author });
+    
+    if (req.xhr || req.headers.accept === 'application/json') {
+      return res.json({
+        success: true,
+        message: `Plugin "${name}" created successfully`,
+        path: pluginPath
+      });
+    }
+    
+    res.redirect('/admin/plugins?created=' + encodeURIComponent(name));
+  } catch (error) {
+    console.error('Error creating plugin:', error);
+    res.status(500).json({
+      error: 'Failed to create plugin',
       message: error.message
     });
   }

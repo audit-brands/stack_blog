@@ -8,7 +8,7 @@ require('dotenv').config();
 const config = require('./config/default');
 const frontendRoutes = require('./routes/frontend');
 const adminRoutes = require('./routes/admin');
-const { cacheService } = require('./services');
+const { cacheService, pluginService } = require('./services');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -141,11 +141,23 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Stack Blog server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Templates: ${templatePath}`);
-});
+// Initialize plugins and start server
+async function startServer() {
+  try {
+    await pluginService.init();
+    
+    app.listen(PORT, () => {
+      console.log(`Stack Blog server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Templates: ${templatePath}`);
+      console.log(`Plugins loaded: ${pluginService.getAllPlugins().length}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;
