@@ -1,0 +1,59 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+<div class="admin-login">
+    <div class="admin-login-container">
+        <div class="admin-login-header">
+            <h1>{{ site.title }}</h1>
+            <h2>Admin Login</h2>
+        </div>
+
+        {% if error %}
+        <div class="admin-alert admin-alert-error">
+            {% if error == 'missing_credentials' %}
+                Please enter both username and password.
+            {% elif error == 'invalid_credentials' %}
+                Invalid username or password.
+            {% elif error == 'server_error' %}
+                Server error occurred. Please try again.
+            {% else %}
+                Login error occurred. Please try again.
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <form method="post" action="/admin/login" class="admin-login-form">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+            
+            <div class="admin-form-group">
+                <label for="username">Username</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    required 
+                    autocomplete="username"
+                    autofocus
+                >
+            </div>
+
+            <div class="admin-form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required 
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button type="submit" class="admin-btn admin-btn-primary">Login</button>
+        </form>
+
+        <div class="admin-login-footer">
+            <a href="/" class="admin-link">← Back to Site</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

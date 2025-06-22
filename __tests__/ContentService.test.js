@@ -115,9 +115,10 @@ describe('ContentService', () => {
   });
 
   describe('listPages', () => {
-    test('should return empty array when no pages exist', async () => {
+    test('should return empty result when no pages exist', async () => {
       const result = await contentService.listPages();
-      expect(result).toEqual([]);
+      expect(result.pages).toEqual([]);
+      expect(result.pagination.total).toBe(0);
     });
 
     test('should list all existing pages', async () => {
@@ -127,9 +128,36 @@ describe('ContentService', () => {
 
       const result = await contentService.listPages();
 
-      expect(result).toHaveLength(2);
-      expect(result.map(p => p.slug)).toContain('page1');
-      expect(result.map(p => p.slug)).toContain('page2');
+      expect(result.pages).toHaveLength(2);
+      expect(result.pages.map(p => p.slug)).toContain('page1');
+      expect(result.pages.map(p => p.slug)).toContain('page2');
+      expect(result.pagination.total).toBe(2);
+    });
+
+    test('should support pagination', async () => {
+      // Create test pages
+      await contentService.savePage('page1', { title: 'Page 1' }, 'Content 1');
+      await contentService.savePage('page2', { title: 'Page 2' }, 'Content 2');
+      await contentService.savePage('page3', { title: 'Page 3' }, 'Content 3');
+
+      const result = await contentService.listPages({ page: 1, limit: 2 });
+
+      expect(result.pages).toHaveLength(2);
+      expect(result.pagination.currentPage).toBe(1);
+      expect(result.pagination.totalPages).toBe(2);
+      expect(result.pagination.hasNext).toBe(true);
+      expect(result.pagination.hasPrev).toBe(false);
+    });
+
+    test('should support search', async () => {
+      // Create test pages
+      await contentService.savePage('page1', { title: 'Test Page' }, 'Content 1');
+      await contentService.savePage('page2', { title: 'Another Page' }, 'Content 2');
+
+      const result = await contentService.listPages({ search: 'Test' });
+
+      expect(result.pages).toHaveLength(1);
+      expect(result.pages[0].slug).toBe('page1');
     });
   });
 
