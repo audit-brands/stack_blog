@@ -35,7 +35,26 @@ A modern, secure flat-file CMS built with Node.js that manages content using Mar
 
 ## 🛠️ Installation
 
-### Quick Start
+### Production Deployment (Recommended)
+
+For production servers, use our automated deployment script:
+
+```bash
+# One-click deployment to VPS/server (no Docker required)
+curl -fsSL https://raw.githubusercontent.com/audit-brands/stack_blog/main/scripts/deploy-simple.sh | bash
+```
+
+This script automatically:
+- ✅ Checks system requirements and installs dependencies
+- ✅ Creates secure environment configuration
+- ✅ Sets up systemd service and Nginx reverse proxy
+- ✅ Configures logging, backups, and firewall
+
+**After deployment:** Run `sudo -u stackblog node /home/stackblog/stack_blog/scripts/setup.js` for interactive setup.
+
+See **[Deployment Guide](docs/DEPLOYMENT.md)** for detailed instructions.
+
+### Quick Start (Development)
 
 1. **Clone the repository**
    ```bash

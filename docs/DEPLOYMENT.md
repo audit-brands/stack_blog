@@ -26,7 +26,41 @@ This guide covers deploying Stack Blog to production environments with proper se
 
 ## 🚀 Deployment Methods
 
-### Method 1: Traditional VPS/Server Deployment
+### Method 1: Simple One-Click Deployment (Recommended)
+
+**Best for:** Most users who want a quick, automated setup without Docker.
+
+This method uses our automated deployment script that handles everything for you:
+
+```bash
+# Download and run the simple deployment script
+curl -fsSL https://raw.githubusercontent.com/audit-brands/stack_blog/main/scripts/deploy-simple.sh | bash
+```
+
+**What it does:**
+- ✅ Checks system requirements (Node.js 16+, npm, git)
+- ✅ Creates dedicated application user (`stackblog`)
+- ✅ Clones and installs the application
+- ✅ Generates secure environment configuration
+- ✅ Sets up systemd service for automatic startup
+- ✅ Configures Nginx reverse proxy (optional)
+- ✅ Sets up log rotation and daily backups
+- ✅ Configures UFW firewall (optional)
+
+**After deployment:**
+1. Run the interactive setup: `sudo -u stackblog node /home/stackblog/stack_blog/scripts/setup.js`
+2. Access your site at `http://your-server-ip:3000` (or your domain if Nginx is configured)
+3. Admin panel: `http://your-server-ip:3000/admin`
+
+**Service Management:**
+```bash
+sudo systemctl status stack-blog    # Check status
+sudo systemctl restart stack-blog   # Restart
+sudo systemctl stop stack-blog      # Stop
+sudo journalctl -u stack-blog -f    # View logs
+```
+
+### Method 2: Traditional VPS/Server Deployment
 
 #### 1. Server Preparation
 
@@ -156,7 +190,7 @@ pm2 status
 pm2 logs stack-blog
 ```
 
-### Method 2: Docker Deployment
+### Method 3: Docker Deployment
 
 #### 1. Create Dockerfile
 
