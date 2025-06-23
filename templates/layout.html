@@ -28,7 +28,7 @@
                 <ul>
                     <li><a href="/" {% if currentPath == '/' %}class="active"{% endif %}>Home</a></li>
                     <li><a href="/about" {% if currentPath == '/about' %}class="active"{% endif %}>About</a></li>
-                    <li><a href="/blog" {% if currentPath.startswith('/blog') %}class="active"{% endif %}>Blog</a></li>
+                    <li><a href="/blog" {% if currentPath and '/blog' in currentPath %}class="active"{% endif %}>Blog</a></li>
                 </ul>
             </nav>
         </div>
