@@ -114,6 +114,7 @@ CACHE_TTL=300000
 ## 📖 Documentation
 
 ### Complete Documentation
+- **[Installation Guide](docs/INSTALLATION.md)** - Comprehensive installation instructions for all deployment methods
 - **[API Documentation](docs/API.md)** - REST API reference and examples
 - **[Security Guide](docs/SECURITY.md)** - Security features and best practices
 - **[Security Audit](docs/SECURITY_AUDIT.md)** - Comprehensive security assessment
