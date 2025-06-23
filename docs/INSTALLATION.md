@@ -144,7 +144,135 @@ docker-compose exec app tar -czf /tmp/backup.tar.gz content/
 docker-compose down
 ```
 
-### Method 3: Manual Installation
+### Method 3: Managed Hosting Deployment (User-Space)
+
+**Best for:** Shared hosting, managed hosting, hosting without sudo privileges
+
+This method is for hosting providers like Pair Networks, SiteGround, or any managed hosting where you don't have root access but can run Node.js applications.
+
+#### Prerequisites
+- Managed hosting with Node.js support
+- SSH access to your hosting account
+- Reverse proxy configuration capability (or domain pointing to custom port)
+
+#### Installation Steps
+
+1. **SSH into your hosting account:**
+   ```bash
+   ssh username@your-hosting-server.com
+   ```
+
+2. **Navigate to your domain directory:**
+   ```bash
+   cd /path/to/your/domain/public_html
+   # Example: cd /usr/www/users/yourusername/yourdomain.com
+   ```
+
+3. **Clone the repository:**
+   ```bash
+   git clone https://github.com/audit-brands/stack_blog.git .
+   ```
+
+4. **Install dependencies:**
+   ```bash
+   npm ci --production
+   ```
+
+5. **Configure environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your settings
+   nano .env
+   ```
+
+6. **Generate secure secrets:**
+   ```bash
+   # Generate session secret and API key
+   node -e "const crypto = require('crypto'); console.log('SESSION_SECRET=' + crypto.randomBytes(64).toString('hex')); console.log('API_KEY=' + crypto.randomBytes(32).toString('hex'));"
+   ```
+
+7. **Generate admin password hash:**
+   ```bash
+   node -p "require('bcrypt').hashSync('YourSecurePassword123!', 12)"
+   # Copy the output to ADMIN_PASSWORD_HASH in .env
+   ```
+
+8. **Create required directories:**
+   ```bash
+   mkdir -p logs content/pages content/media
+   ```
+
+9. **Start the application persistently:**
+   ```bash
+   # Using screen (recommended)
+   screen -dmS stackblog node app.js
+   
+   # Or using nohup
+   nohup node app.js > logs/app.log 2>&1 &
+   ```
+
+10. **Configure reverse proxy** (hosting provider specific):
+    - **Pair Networks**: Use their reverse proxy management panel
+    - **cPanel**: Use proxy settings or subdomain forwarding
+    - **Other providers**: Contact support or check documentation
+
+#### Hosting Provider Specific Instructions
+
+**Pair Networks:**
+1. Access your hosting control panel
+2. Navigate to "Manage Reverse Proxies"
+3. Add mapping: `yourdomain.com/` → `HTTP://localhost:3000`
+
+**cPanel Hosting:**
+1. Use "Subdomains" to create a subdomain
+2. Point subdomain to port 3000
+3. Or contact hosting support for port forwarding
+
+**General Hosting:**
+- Most managed hosting requires reverse proxy configuration
+- Contact your hosting provider for Node.js application setup
+- Some providers offer one-click Node.js app deployment
+
+#### Management Commands
+
+```bash
+# Check if application is running
+ps aux | grep node
+
+# View logs
+tail -f logs/app.log
+
+# Restart application
+screen -S stackblog -X quit
+screen -dmS stackblog node app.js
+
+# Check screen sessions
+screen -list
+
+# Attach to running session
+screen -r stackblog
+```
+
+#### Troubleshooting
+
+**Application won't start:**
+- Check Node.js version: `node --version` (needs 16+)
+- Verify dependencies: `npm ci --production`
+- Check .env configuration
+- Review logs: `cat logs/app.log`
+
+**Can't access website:**
+- Verify reverse proxy configuration
+- Check if application is running: `ps aux | grep node`
+- Test locally: `curl http://localhost:3000`
+- Contact hosting provider about port forwarding
+
+**Template errors:**
+- Ensure content/pages/index.md exists
+- Check template syntax in templates/layout.html
+- Verify all required directories exist
+
+### Method 4: Manual Installation
 
 **Best for:** Development, custom setups, learning purposes
 
