@@ -9,7 +9,7 @@ const config = require('./config/default');
 const frontendRoutes = require('./routes/frontend');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
-const { cacheService, pluginService } = require('./services');
+const { cacheService, pluginService, setThemeService, ThemeService } = require('./services');
 
 // Security middleware
 const {
@@ -74,6 +74,10 @@ nunjucksEnv.addFilter('date', (str, format = 'F j, Y') => {
 
 // Set view engine
 app.set('view engine', 'html');
+
+// Initialize Theme Service
+const themeService = new ThemeService(app);
+setThemeService(themeService);
 
 // Session configuration
 app.use(session({

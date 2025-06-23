@@ -5,6 +5,7 @@ const MediaService = require('./MediaService');
 const CacheService = require('./CacheService');
 const PluginService = require('./PluginService');
 const SearchService = require('./SearchService');
+const ThemeService = require('./ThemeService');
 
 // Create singleton instances
 const cacheService = new CacheService();
@@ -15,6 +16,9 @@ const authService = new AuthService();
 const mediaService = new MediaService();
 const searchService = new SearchService(contentService, markdownService, cacheService);
 
+// Note: ThemeService will be initialized in app.js with app reference
+let themeService = null;
+
 module.exports = {
   ContentService,
   MarkdownService,
@@ -23,11 +27,14 @@ module.exports = {
   CacheService,
   PluginService,
   SearchService,
+  ThemeService,
   contentService,
   markdownService,
   authService,
   mediaService,
   cacheService,
   pluginService,
-  searchService
+  searchService,
+  setThemeService: (service) => { themeService = service; },
+  getThemeService: () => themeService
 };

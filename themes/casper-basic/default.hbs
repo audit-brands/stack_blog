@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{ghost_head}}
+    
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>{{#if meta_title}}{{meta_title}}{{else}}{{title}}{{#unless page}} - {{@site.title}}{{/unless}}{{/if}}</title>
+    <meta name="description" content="{{#if meta_description}}{{meta_description}}{{else}}{{excerpt}}{{/if}}">
+    
+    <link rel="stylesheet" type="text/css" href="{{asset 'css/screen.css'}}">
+    
+    {{#if @site.icon}}
+    <link rel="icon" href="{{@site.icon}}" type="image/png">
+    {{/if}}
+</head>
+
+<body class="{{body_class}}">
+    <div class="viewport">
+        <header id="gh-head" class="gh-head outer">
+            <div class="gh-head-inner inner">
+                <div class="gh-head-brand">
+                    <a class="gh-head-logo" href="{{@site.url}}">
+                        {{#if @site.logo}}
+                            <img src="{{@site.logo}}" alt="{{@site.title}}">
+                        {{else}}
+                            {{@site.title}}
+                        {{/if}}
+                    </a>
+                </div>
+                
+                <div class="gh-head-menu">
+                    {{navigation}}
+                </div>
+            </div>
+        </header>
+
+        <div class="site-wrapper">
+            {{{body}}}
+        </div>
+
+        <footer class="site-footer outer">
+            <div class="inner">
+                <section class="copyright">
+                    <a href="{{@site.url}}">{{@site.title}}</a> &copy; {{date format="YYYY"}}
+                </section>
+                <nav class="site-footer-nav">
+                    <a href="{{@site.url}}">Latest Posts</a>
+                    {{#if @site.facebook}}
+                    <a href="{{facebook_url @site.facebook}}" target="_blank" rel="noopener">Facebook</a>
+                    {{/if}}
+                    {{#if @site.twitter}}
+                    <a href="{{twitter_url @site.twitter}}" target="_blank" rel="noopener">Twitter</a>
+                    {{/if}}
+                </nav>
+            </div>
+        </footer>
+    </div>
+
+    {{ghost_foot}}
+</body>
+</html>
