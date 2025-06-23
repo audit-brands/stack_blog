@@ -1,17 +1,60 @@
 {
   "name": "stack_blog",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A modern, secure flat-file CMS built with Node.js",
+  "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "node app.js",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "dev": "NODE_ENV=development nodemon app.js",
+    "debug": "NODE_ENV=development node --inspect app.js",
+    "test": "NODE_ENV=test jest",
+    "test:watch": "NODE_ENV=test jest --watch",
+    "test:coverage": "NODE_ENV=test jest --coverage",
+    "setup": "node scripts/setup.js",
+    "build": "echo 'No build step required for Node.js application'",
+    "lint": "eslint . --ext .js --ignore-path .gitignore",
+    "lint:fix": "eslint . --ext .js --ignore-path .gitignore --fix",
+    "format": "prettier --write \"**/*.{js,json,md}\"",
+    "health-check": "node healthcheck.js",
+    "deploy": "bash scripts/deploy.sh",
+    "backup": "bash scripts/backup.sh",
+    "security-audit": "npm audit && node scripts/security-check.js",
+    "pm2:start": "pm2 start ecosystem.config.js --env production",
+    "pm2:stop": "pm2 stop stack_blog",
+    "pm2:restart": "pm2 restart stack_blog",
+    "pm2:reload": "pm2 reload stack_blog",
+    "pm2:logs": "pm2 logs stack_blog",
+    "docker:build": "docker build -t stack_blog .",
+    "docker:run": "docker run -p 3000:3000 --env-file .env stack_blog",
+    "docker:compose": "docker-compose up -d",
+    "docker:compose:down": "docker-compose down"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "cms",
+    "blog",
+    "flat-file",
+    "markdown",
+    "nodejs",
+    "express",
+    "admin-panel",
+    "api",
+    "search",
+    "security"
+  ],
+  "author": "Stack Blog Team",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/audit-brands/stack_blog.git"
+  },
+  "bugs": {
+    "url": "https://github.com/audit-brands/stack_blog/issues"
+  },
+  "homepage": "https://github.com/audit-brands/stack_blog#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -32,7 +75,54 @@
     "sharp": "^0.34.2"
   },
   "devDependencies": {
+    "eslint": "^8.57.0",
     "jest": "^30.0.2",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.3.3",
     "supertest": "^7.1.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "services/**/*.js",
+      "routes/**/*.js",
+      "middleware/**/*.js",
+      "!**/*.test.js"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
+  },
+  "eslintConfig": {
+    "env": {
+      "node": true,
+      "es2021": true,
+      "jest": true
+    },
+    "extends": [
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 12,
+      "sourceType": "module"
+    },
+    "rules": {
+      "no-unused-vars": "error",
+      "no-console": "off",
+      "prefer-const": "error",
+      "no-var": "error"
+    }
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2
   }
 }
