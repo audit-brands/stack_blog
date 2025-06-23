@@ -1,0 +1,178 @@
+version: '3.8'
+
+services:
+  stack-blog:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stack-blog
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3000
+    env_file:
+      - .env
+    volumes:
+      # Persistent content storage
+      - ./content:/usr/src/app/content
+      - ./logs:/usr/src/app/logs
+      # Optional: mount custom plugins
+      - ./plugins:/usr/src/app/plugins
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - stack-blog-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stack-blog.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.stack-blog.tls=true"
+      - "traefik.http.routers.stack-blog.tls.certresolver=letsencrypt"
+      - "traefik.http.services.stack-blog.loadbalancer.server.port=3000"
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx-cache:/var/cache/nginx
+    depends_on:
+      - stack-blog
+    networks:
+      - stack-blog-network
+    labels:
+      - "traefik.enable=false"
+
+  # Optional: Redis for session storage and caching
+  redis:
+    image: redis:7-alpine
+    container_name: stack-blog-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    networks:
+      - stack-blog-network
+    profiles:
+      - redis
+
+  # Optional: Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: stack-blog-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - stack-blog-network
+    profiles:
+      - monitoring
+
+  # Optional: Grafana for monitoring dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: stack-blog-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - stack-blog-network
+    profiles:
+      - monitoring
+
+  # Optional: Log aggregation with Loki
+  loki:
+    image: grafana/loki:latest
+    container_name: stack-blog-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - stack-blog-network
+    profiles:
+      - monitoring
+
+  # Optional: Log shipping with Promtail
+  promtail:
+    image: grafana/promtail:latest
+    container_name: stack-blog-promtail
+    restart: unless-stopped
+    volumes:
+      - ./logs:/var/log/stack-blog:ro
+      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - stack-blog-network
+    profiles:
+      - monitoring
+
+  # Optional: Backup service
+  backup:
+    image: alpine:latest
+    container_name: stack-blog-backup
+    restart: "no"
+    volumes:
+      - ./content:/backup/content:ro
+      - ./backup-storage:/backup/storage
+      - ./scripts/backup-docker.sh:/backup.sh:ro
+    environment:
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+    command: /backup.sh
+    networks:
+      - stack-blog-network
+    profiles:
+      - backup
+
+networks:
+  stack-blog-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  loki-data:
+    driver: local
+  nginx-cache:
+    driver: local
