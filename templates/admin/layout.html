@@ -9,57 +9,224 @@
     <meta name="generator" content="Stack Blog CMS">
     
     <!-- Admin CSS -->
-    <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/admin.css">
+    <script src="https://kit.fontawesome.com/2c3e9b0c2f.js" crossorigin="anonymous"></script>
     
     {% block head %}{% endblock %}
 </head>
-<body class="admin-body">
-    {% if user %}
-    <header class="admin-header">
-        <div class="admin-container">
-            <div class="admin-header-content">
-                <h1 class="admin-title">
-                    <a href="/admin">{{ site.title }} Admin</a>
-                </h1>
+<body>
+    <div class="admin-wrapper">
+        {% if user %}
+        <!-- Navigation Bar -->
+        <nav class="navbar admin-navbar" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+                <a class="navbar-item" href="/admin">
+                    <strong>{{ site.title }} Admin</strong>
+                </a>
                 
-                <nav class="admin-nav">
-                    <ul>
-                        <li><a href="/admin" {% if currentPath == '/admin' %}class="active"{% endif %}>Dashboard</a></li>
-                        <li><a href="/admin/pages" {% if currentPath.startswith('/admin/pages') %}class="active"{% endif %}>Pages</a></li>
-                        <li><a href="/admin/media" {% if currentPath.startswith('/admin/media') %}class="active"{% endif %}>Media</a></li>
-                        <li><a href="/" target="_blank">View Site</a></li>
-                    </ul>
-                </nav>
-                
-                <div class="admin-user">
-                    <span class="admin-username">{{ user.username }}</span>
-                    <form method="post" action="/admin/logout" class="admin-logout-form">
-                        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
-                        <button type="submit" class="admin-logout-btn">Logout</button>
-                    </form>
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbar-menu">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
+            
+            <div id="navbar-menu" class="navbar-menu">
+                <div class="navbar-end">
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            <span class="icon">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <span>{{ user.username or 'Admin' }}</span>
+                        </a>
+                        
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="/admin">
+                                <span class="icon">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                </span>
+                                Dashboard
+                            </a>
+                            <a class="navbar-item" href="/" target="_blank">
+                                <span class="icon">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </span>
+                                View Site
+                            </a>
+                            <hr class="navbar-divider">
+                            <div class="navbar-item">
+                                <form action="/admin/logout" method="POST" style="margin: 0;">
+                                    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                                    <button type="submit" class="button is-small is-light">
+                                        <span class="icon">
+                                            <i class="fas fa-sign-out-alt"></i>
+                                        </span>
+                                        <span>Logout</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </nav>
+        
+        <!-- Main Content Area -->
+        <div class="admin-main">
+            <!-- Sidebar -->
+            <aside class="admin-sidebar">
+                <div class="menu">
+                    <p class="menu-label">Main</p>
+                    <ul class="menu-list">
+                        <li>
+                            <a href="/admin" class="{{ 'is-active' if currentPath == '/admin' }}">
+                                <span class="icon">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                </span>
+                                Dashboard
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <p class="menu-label">Content</p>
+                    <ul class="menu-list">
+                        <li>
+                            <a href="/admin/pages" class="{{ 'is-active' if currentPath.startswith('/admin/pages') }}">
+                                <span class="icon">
+                                    <i class="fas fa-file-alt"></i>
+                                </span>
+                                Pages
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/pages/new" class="{{ 'is-active' if currentPath == '/admin/pages/new' }}">
+                                <span class="icon">
+                                    <i class="fas fa-plus"></i>
+                                </span>
+                                New Page
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/search" target="_blank">
+                                <span class="icon">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                Search
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <p class="menu-label">Media</p>
+                    <ul class="menu-list">
+                        <li>
+                            <a href="/admin/media" class="{{ 'is-active' if currentPath.startswith('/admin/media') }}">
+                                <span class="icon">
+                                    <i class="fas fa-images"></i>
+                                </span>
+                                Media Library
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <p class="menu-label">System</p>
+                    <ul class="menu-list">
+                        <li>
+                            <a href="/admin/cache" class="{{ 'is-active' if currentPath == '/admin/cache' }}">
+                                <span class="icon">
+                                    <i class="fas fa-memory"></i>
+                                </span>
+                                Cache
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/plugins" class="{{ 'is-active' if currentPath == '/admin/plugins' }}">
+                                <span class="icon">
+                                    <i class="fas fa-plug"></i>
+                                </span>
+                                Plugins
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/search" class="{{ 'is-active' if currentPath == '/admin/search' }}">
+                                <span class="icon">
+                                    <i class="fas fa-search-plus"></i>
+                                </span>
+                                Search Management
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <p class="menu-label">API</p>
+                    <ul class="menu-list">
+                        <li>
+                            <a href="/api/status" target="_blank">
+                                <span class="icon">
+                                    <i class="fas fa-code"></i>
+                                </span>
+                                API Status
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+            
+            <!-- Content Area -->
+            <main class="admin-content">
+                <!-- Flash Messages -->
+                {% if savedMessage %}
+                <div class="notification is-success fade-in">
+                    <button class="delete"></button>
+                    <span class="icon">
+                        <i class="fas fa-check-circle"></i>
+                    </span>
+                    <strong>Success!</strong> {{ savedMessage }} has been saved.
+                </div>
+                {% endif %}
+                
+                {% if deletedMessage %}
+                <div class="notification is-info fade-in">
+                    <button class="delete"></button>
+                    <span class="icon">
+                        <i class="fas fa-trash"></i>
+                    </span>
+                    <strong>Deleted!</strong> {{ deletedMessage }} has been deleted.
+                </div>
+                {% endif %}
+                
+                {% if uploadedMessage %}
+                <div class="notification is-success fade-in">
+                    <button class="delete"></button>
+                    <span class="icon">
+                        <i class="fas fa-upload"></i>
+                    </span>
+                    <strong>Uploaded!</strong> {{ uploadedMessage }} uploaded successfully.
+                </div>
+                {% endif %}
+                
+                {% if error %}
+                <div class="notification is-danger fade-in">
+                    <button class="delete"></button>
+                    <span class="icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </span>
+                    <strong>Error!</strong> {{ error }}
+                </div>
+                {% endif %}
+                
+                <!-- Page Content -->
+                {% block content %}{% endblock %}
+            </main>
         </div>
-    </header>
-    {% endif %}
-
-    <main class="admin-main">
-        <div class="admin-container">
+        {% else %}
+        <!-- Not authenticated - simple layout -->
+        <main class="admin-content">
             {% block content %}{% endblock %}
-        </div>
-    </main>
-
-    {% if user %}
-    <footer class="admin-footer">
-        <div class="admin-container">
-            <p>&copy; {{ new Date().getFullYear() }} {{ site.title }}. Powered by Stack Blog CMS.</p>
-        </div>
-    </footer>
-    {% endif %}
-
+        </main>
+        {% endif %}
+    </div>
+    
     <!-- Admin JavaScript -->
-    <script src="/js/main.js"></script>
     <script src="/js/admin.js"></script>
     
     {% block scripts %}{% endblock %}

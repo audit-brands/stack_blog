@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.metadata.title }} | {{ site.title }}</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .media-item {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .media-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .media-preview {
+            width: 100%;
+            height: 150px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .media-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .media-preview .file-icon {
+            font-size: 3rem;
+            color: #6c757d;
+        }
+        
+        .media-info {
+            padding: 1rem;
+        }
+        
+        .media-filename {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+        }
+        
+        .media-meta {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+        
+        .media-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: #f8f9fa;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area.dragover {
+            border-color: #0066cc;
+            background: #e7f3ff;
+        }
+        
+        .upload-area input[type="file"] {
+            display: none;
+        }
+        
+        .upload-progress {
+            display: none;
+            margin-top: 1rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #0066cc;
+            transition: width 0.3s ease;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-tab {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-tab:hover,
+        .filter-tab.active {
+            background: #0066cc;
+            border-color: #0066cc;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .media-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            padding: 2rem;
+        }
+        
+        .media-modal-content {
+            background: white;
+            border-radius: 8px;
+            max-width: 600px;
+            max-height: 90vh;
+            margin: 0 auto;
+            overflow-y: auto;
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .media-modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .media-modal-body {
+            padding: 1.5rem;
+        }
+        
+        .media-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        @media (max-width: 768px) {
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 0.5rem;
+            }
+            
+            .filter-tabs {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body class="admin-body">
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="admin-container">
+            <div class="admin-header-content">
+                <h1 class="admin-title">
+                    <a href="/admin">{{ site.title }} Admin</a>
+                </h1>
+                
+                <nav class="admin-nav">
+                    <ul>
+                        <li><a href="/admin">Dashboard</a></li>
+                        <li><a href="/admin/pages">Pages</a></li>
+                        <li><a href="/admin/media" class="active">Media</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="admin-user">
+                    <span class="admin-username">{{ user.username }}</span>
+                    <form method="POST" action="/admin/logout" class="admin-logout-form">
+                        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                        <button type="submit" class="admin-logout-btn">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <div class="admin-dashboard-header">
+                <h1>Media Library</h1>
+                <p>Upload and manage images and files for your content.</p>
+            </div>
+
+            <!-- Success/Error Messages -->
+            {% if uploadedMessage %}
+            <div class="admin-alert admin-alert-success">
+                <h3>Files Uploaded</h3>
+                <p>Successfully uploaded: {{ uploadedMessage }}</p>
+            </div>
+            {% endif %}
+
+            {% if deletedMessage %}
+            <div class="admin-alert admin-alert-success">
+                <h3>File Deleted</h3>
+                <p>The file "{{ deletedMessage }}" has been deleted successfully.</p>
+            </div>
+            {% endif %}
+
+            <!-- Upload Area -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3>Upload Files</h3>
+                </div>
+                <div class="admin-card-content">
+                    <form id="upload-form" method="POST" action="/admin/media/upload" enctype="multipart/form-data">
+                        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                        <div class="upload-area" id="upload-area">
+                            <div class="upload-content">
+                                <p style="margin: 0 0 1rem 0; font-size: 1.1rem; font-weight: 600;">
+                                    📁 Drop files here or click to browse
+                                </p>
+                                <p style="margin: 0 0 1rem 0; color: #6c757d;">
+                                    Supports: Images (JPG, PNG, GIF, WebP, SVG), PDF, Text, Documents
+                                </p>
+                                <input type="file" name="files" id="file-input" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.txt,.doc,.docx">
+                                <button type="button" class="admin-btn admin-btn-primary" onclick="document.getElementById('file-input').click()">
+                                    Choose Files
+                                </button>
+                            </div>
+                            <div class="upload-progress" id="upload-progress">
+                                <p>Uploading files...</p>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progress-fill"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="admin-card">
+                <div class="admin-card-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        <div class="filter-tabs">
+                            <a href="/admin/media?type=all{% if search %}&search={{ search }}{% endif %}" 
+                               class="filter-tab {{ 'active' if type == 'all' }}">All</a>
+                            <a href="/admin/media?type=image{% if search %}&search={{ search }}{% endif %}" 
+                               class="filter-tab {{ 'active' if type == 'image' }}">Images</a>
+                            <a href="/admin/media?type=pdf{% if search %}&search={{ search }}{% endif %}" 
+                               class="filter-tab {{ 'active' if type == 'pdf' }}">PDFs</a>
+                            <a href="/admin/media?type=document{% if search %}&search={{ search }}{% endif %}" 
+                               class="filter-tab {{ 'active' if type == 'document' }}">Documents</a>
+                        </div>
+                        
+                        <form method="GET" action="/admin/media" style="flex: 1; max-width: 300px;">
+                            <input type="hidden" name="type" value="{{ type }}">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" name="search" value="{{ search }}" placeholder="Search files..." 
+                                       style="flex: 1; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px;">
+                                <button type="submit" class="admin-btn admin-btn-outline admin-btn-small">Search</button>
+                                {% if search %}
+                                <a href="/admin/media?type={{ type }}" class="admin-btn admin-btn-secondary admin-btn-small">Clear</a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Media Grid -->
+            {% if files.length > 0 %}
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3>Files ({{ pagination.total }} total{% if search %}, filtered by "{{ search }}"{% endif %})</h3>
+                </div>
+                <div class="admin-card-content">
+                    <div class="media-grid">
+                        {% for file in files %}
+                        <div class="media-item" data-filename="{{ file.filename }}" onclick="openMediaModal('{{ file.filename }}')">
+                            <div class="media-preview">
+                                {% if file.isImage %}
+                                <img src="{{ file.path }}" alt="{{ file.filename }}" loading="lazy">
+                                {% else %}
+                                <div class="file-icon">
+                                    {% if file.type == 'pdf' %}📄
+                                    {% elif file.type == 'document' %}📝
+                                    {% elif file.type == 'text' %}📃
+                                    {% else %}📁
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="media-info">
+                                <div class="media-filename">{{ file.filename }}</div>
+                                <div class="media-meta">
+                                    {{ formatFileSize(file.size) }} • {{ file.modified | date }}
+                                </div>
+                                <div class="media-actions">
+                                    <a href="{{ file.path }}" target="_blank" class="admin-btn admin-btn-outline admin-btn-small">View</a>
+                                    <button onclick="event.stopPropagation(); deleteFile('{{ file.filename }}')" 
+                                            class="admin-btn admin-btn-outline admin-btn-small"
+                                            style="color: #dc3545; border-color: #dc3545;">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.totalPages > 1 %}
+            <div class="admin-card">
+                <div class="admin-card-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="admin-text-small admin-text-muted">
+                            Showing {{ ((pagination.currentPage - 1) * pagination.limit) + 1 }} to 
+                            {{ (pagination.currentPage * pagination.limit) if (pagination.currentPage * pagination.limit) < pagination.total else pagination.total }} 
+                            of {{ pagination.total }} files
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            {% if pagination.hasPrev %}
+                            <a href="/admin/media?page={{ pagination.prevPage }}&type={{ type }}{% if search %}&search={{ search }}{% endif %}" 
+                               class="admin-btn admin-btn-outline admin-btn-small">Previous</a>
+                            {% endif %}
+                            
+                            {% for pageNum in range(1, pagination.totalPages + 1) %}
+                                {% if pageNum == pagination.currentPage %}
+                                <span class="admin-btn admin-btn-primary admin-btn-small">{{ pageNum }}</span>
+                                {% elif pageNum == 1 or pageNum == pagination.totalPages or (pageNum >= pagination.currentPage - 2 and pageNum <= pagination.currentPage + 2) %}
+                                <a href="/admin/media?page={{ pageNum }}&type={{ type }}{% if search %}&search={{ search }}{% endif %}" 
+                                   class="admin-btn admin-btn-outline admin-btn-small">{{ pageNum }}</a>
+                                {% elif pageNum == pagination.currentPage - 3 or pageNum == pagination.currentPage + 3 %}
+                                <span class="admin-btn admin-btn-outline admin-btn-small" style="cursor: default;">...</span>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.hasNext %}
+                            <a href="/admin/media?page={{ pagination.nextPage }}&type={{ type }}{% if search %}&search={{ search }}{% endif %}" 
+                               class="admin-btn admin-btn-outline admin-btn-small">Next</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="admin-card">
+                <div class="admin-card-content" style="text-align: center; padding: 3rem;">
+                    {% if search %}
+                    <h3>No files found</h3>
+                    <p class="admin-text-muted">No files match your search for "{{ search }}".</p>
+                    <a href="/admin/media?type={{ type }}" class="admin-btn admin-btn-outline">View All Files</a>
+                    {% else %}
+                    <h3>No files uploaded yet</h3>
+                    <p class="admin-text-muted">Upload your first file using the upload area above.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- Media Modal -->
+    <div class="media-modal" id="media-modal">
+        <div class="media-modal-content">
+            <div class="media-modal-header">
+                <h3 id="modal-title">File Details</h3>
+                <button class="media-modal-close" onclick="closeMediaModal()">×</button>
+            </div>
+            <div class="media-modal-body" id="modal-body">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Footer -->
+    <footer class="admin-footer">
+        <div class="admin-container">
+            <p>&copy; 2024 {{ site.title }}. Powered by Stack Blog.</p>
+        </div>
+    </footer>
+
+    <script src="/js/admin.js"></script>
+    <script>
+        // Media library JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('file-input');
+            const uploadForm = document.getElementById('upload-form');
+            const uploadProgress = document.getElementById('upload-progress');
+            const progressFill = document.getElementById('progress-fill');
+
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                handleFileUpload(files);
+            });
+
+            // File input change
+            fileInput.addEventListener('change', function(e) {
+                handleFileUpload(e.target.files);
+            });
+
+            function handleFileUpload(files) {
+                if (files.length === 0) return;
+
+                const formData = new FormData();
+                formData.append('_csrf', '{{ csrfToken }}');
+                
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('files', files[i]);
+                }
+
+                // Show progress
+                uploadProgress.style.display = 'block';
+                progressFill.style.width = '0%';
+
+                fetch('/admin/media/upload', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    uploadProgress.style.display = 'none';
+                    
+                    if (data.success) {
+                        // Reload page to show uploaded files
+                        window.location.reload();
+                    } else {
+                        alert('Upload failed: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    uploadProgress.style.display = 'none';
+                    console.error('Upload error:', error);
+                    alert('Upload failed: ' + error.message);
+                });
+
+                // Simulate progress (since we can't track real progress easily)
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 10;
+                    progressFill.style.width = progress + '%';
+                    if (progress >= 90) {
+                        clearInterval(interval);
+                    }
+                }, 200);
+            }
+        });
+
+        function openMediaModal(filename) {
+            const modal = document.getElementById('media-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+
+            modalTitle.textContent = filename;
+            modalBody.innerHTML = '<p>Loading...</p>';
+            modal.style.display = 'block';
+
+            // Fetch file info
+            fetch(`/admin/media/${filename}/info`)
+                .then(response => response.json())
+                .then(data => {
+                    let content = `
+                        <div style="text-align: center; margin-bottom: 1rem;">
+                            ${data.isImage ? 
+                                `<img src="${data.path}" alt="${data.filename}" style="max-width: 100%; max-height: 300px; border-radius: 4px;">` :
+                                `<div style="font-size: 4rem; color: #6c757d; margin: 2rem 0;">
+                                    ${data.type === 'pdf' ? '📄' : data.type === 'document' ? '📝' : data.type === 'text' ? '📃' : '📁'}
+                                </div>`
+                            }
+                        </div>
+                        <dl class="admin-definition-list">
+                            <dt>Filename</dt>
+                            <dd>${data.filename}</dd>
+                            <dt>File Size</dt>
+                            <dd>${formatBytes(data.size)}</dd>
+                            <dt>File Type</dt>
+                            <dd>${data.mimeType}</dd>
+                            <dt>Uploaded</dt>
+                            <dd>${new Date(data.created).toLocaleDateString()}</dd>
+                            <dt>URL</dt>
+                            <dd><code style="word-break: break-all;">${data.path}</code></dd>
+                        </dl>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                            <a href="${data.path}" target="_blank" class="admin-btn admin-btn-primary">View File</a>
+                            <button onclick="copyToClipboard('${data.path}')" class="admin-btn admin-btn-secondary">Copy URL</button>
+                            <button onclick="deleteFile('${data.filename}')" class="admin-btn admin-btn-outline" style="color: #dc3545; border-color: #dc3545;">Delete</button>
+                        </div>
+                    `;
+                    modalBody.innerHTML = content;
+                })
+                .catch(error => {
+                    modalBody.innerHTML = '<p>Error loading file information.</p>';
+                });
+        }
+
+        function closeMediaModal() {
+            document.getElementById('media-modal').style.display = 'none';
+        }
+
+        function deleteFile(filename) {
+            if (!confirm(`Are you sure you want to delete "${filename}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            fetch(`/admin/media/${filename}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ _csrf: '{{ csrfToken }}' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Delete failed: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                alert('Delete failed: ' + error.message);
+            });
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('URL copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('URL copied to clipboard!');
+                } catch (err) {
+                    alert('Failed to copy URL');
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('media-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMediaModal();
+            }
+        });
+    </script>
+</body>
+</html>

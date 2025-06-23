@@ -4,8 +4,10 @@ const matter = require('gray-matter');
 const config = require('../config/default');
 
 class ContentService {
-  constructor() {
+  constructor(cacheService = null, pluginService = null) {
     this.contentPath = config.paths.content;
+    this.cache = cacheService;
+    this.plugins = pluginService;
   }
 
   /**
@@ -16,16 +18,51 @@ class ContentService {
   async getPage(slug) {
     try {
       const pagePath = path.join(this.contentPath, slug, 'index.md');
+      
+      // Use cache if available
+      if (this.cache) {
+        return await this.cache.cacheContent(pagePath, async () => {
+          return await this._loadPage(slug, pagePath);
+        });
+      }
+      
+      return await this._loadPage(slug, pagePath);
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Internal method to load page from disk
+   */
+  async _loadPage(slug, pagePath) {
+    try {
+      // Execute before load hook
+      if (this.plugins) {
+        const hookData = await this.plugins.beforePageLoad(slug);
+        slug = hookData.slug || slug;
+      }
+      
       const fileContent = await fs.readFile(pagePath, 'utf-8');
       const { data, content } = matter(fileContent);
       
-      return {
+      let page = {
         slug,
         path: pagePath,
         metadata: data,
         content,
         exists: true
       };
+      
+      // Execute after load hook
+      if (this.plugins) {
+        page = await this.plugins.afterPageLoad(page);
+      }
+      
+      return page;
     } catch (error) {
       if (error.code === 'ENOENT') {
         return null;
@@ -36,26 +73,88 @@ class ContentService {
 
   /**
    * Get all pages from the content directory
-   * @returns {Promise<Array>} Array of page objects
+   * @param {Object} options - Options for listing pages
+   * @param {number} options.page - Page number for pagination
+   * @param {number} options.limit - Items per page
+   * @param {string} options.search - Search term
+   * @returns {Promise<Object>} Object with pages array and pagination info
    */
-  async listPages() {
+  async listPages(options = {}) {
     try {
+      const { page = 1, limit = 10, search = '' } = options;
       const entries = await fs.readdir(this.contentPath, { withFileTypes: true });
-      const pages = [];
+      const allPages = [];
 
       for (const entry of entries) {
         if (entry.isDirectory()) {
-          const page = await this.getPage(entry.name);
-          if (page) {
-            pages.push(page);
+          const pageData = await this.getPage(entry.name);
+          if (pageData) {
+            // Add file stats for sorting
+            const filePath = path.join(this.contentPath, entry.name, 'index.md');
+            try {
+              const stats = await fs.stat(filePath);
+              pageData.lastModified = stats.mtime;
+              pageData.created = stats.birthtime;
+            } catch (statError) {
+              pageData.lastModified = new Date();
+              pageData.created = new Date();
+            }
+            allPages.push(pageData);
           }
         }
       }
 
-      return pages;
+      // Filter pages based on search term
+      let filteredPages = allPages;
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredPages = allPages.filter(page => {
+          const title = (page.metadata.title || '').toLowerCase();
+          const content = (page.content || '').toLowerCase();
+          const slug = (page.slug || '').toLowerCase();
+          return title.includes(searchLower) || 
+                 content.includes(searchLower) || 
+                 slug.includes(searchLower);
+        });
+      }
+
+      // Sort by last modified date (newest first)
+      filteredPages.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+
+      // Calculate pagination
+      const total = filteredPages.length;
+      const totalPages = Math.ceil(total / limit);
+      const offset = (page - 1) * limit;
+      const paginatedPages = filteredPages.slice(offset, offset + limit);
+
+      return {
+        pages: paginatedPages,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          total,
+          limit,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+          nextPage: page < totalPages ? page + 1 : null,
+          prevPage: page > 1 ? page - 1 : null
+        }
+      };
     } catch (error) {
       console.error('Error listing pages:', error);
-      return [];
+      return {
+        pages: [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 0,
+          total: 0,
+          limit,
+          hasNext: false,
+          hasPrev: false,
+          nextPage: null,
+          prevPage: null
+        }
+      };
     }
   }
 
@@ -68,6 +167,14 @@ class ContentService {
    */
   async savePage(slug, metadata, content) {
     try {
+      // Execute before save hook
+      if (this.plugins) {
+        const hookData = await this.plugins.beforePageSave({ slug, metadata, content });
+        slug = hookData.slug || slug;
+        metadata = hookData.metadata || metadata;
+        content = hookData.content || content;
+      }
+      
       const pagePath = path.join(this.contentPath, slug);
       const filePath = path.join(pagePath, 'index.md');
 
@@ -89,7 +196,20 @@ class ContentService {
       // Write file
       await fs.writeFile(filePath, fileContent, 'utf-8');
 
-      return await this.getPage(slug);
+      // Invalidate cache for this page and page listings
+      if (this.cache) {
+        this.cache.invalidatePattern(`.*${slug}.*`);
+        this.cache.invalidatePattern('.*listPages.*');
+      }
+
+      const savedPage = await this.getPage(slug);
+      
+      // Execute after save hook
+      if (this.plugins) {
+        await this.plugins.afterPageSave(savedPage);
+      }
+      
+      return savedPage;
     } catch (error) {
       console.error('Error saving page:', error);
       throw error;
@@ -103,6 +223,12 @@ class ContentService {
    */
   async deletePage(slug) {
     try {
+      // Execute before delete hook
+      if (this.plugins) {
+        const hookData = await this.plugins.beforePageDelete(slug);
+        slug = hookData.slug || slug;
+      }
+      
       const pagePath = path.join(this.contentPath, slug);
       
       // Check if directory exists
@@ -113,6 +239,18 @@ class ContentService {
 
       // Remove directory and all contents
       await fs.rm(pagePath, { recursive: true, force: true });
+      
+      // Invalidate cache for this page and page listings
+      if (this.cache) {
+        this.cache.invalidatePattern(`.*${slug}.*`);
+        this.cache.invalidatePattern('.*listPages.*');
+      }
+      
+      // Execute after delete hook
+      if (this.plugins) {
+        await this.plugins.afterPageDelete(slug);
+      }
+      
       return true;
     } catch (error) {
       if (error.code === 'ENOENT') {
@@ -156,7 +294,8 @@ class ContentService {
    * @returns {Promise<Object>} Nested page structure
    */
   async getPageHierarchy() {
-    const pages = await this.listPages();
+    const result = await this.listPages({ limit: 1000 }); // Get all pages
+    const pages = result.pages;
     
     // Sort pages by title
     pages.sort((a, b) => {

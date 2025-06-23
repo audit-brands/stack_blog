@@ -1,19 +1,48 @@
 const express = require('express');
-const helmet = require('helmet');
 const session = require('express-session');
 const nunjucks = require('nunjucks');
 const path = require('path');
+const cors = require('cors');
 require('dotenv').config();
 
 const config = require('./config/default');
 const frontendRoutes = require('./routes/frontend');
 const adminRoutes = require('./routes/admin');
+const apiRoutes = require('./routes/api');
+const { cacheService, pluginService } = require('./services');
+
+// Security middleware
+const {
+  generalLimiter,
+  authLimiter,
+  apiLimiter,
+  securityHeaders,
+  corsOptions,
+  sanitizeInput,
+  securityLogger,
+  adminSecurityCheck
+} = require('./middleware/security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
-app.use(helmet());
+// Trust proxy for rate limiting behind reverse proxy
+app.set('trust proxy', 1);
+
+// Security headers
+app.use(securityHeaders);
+
+// CORS configuration
+app.use(cors(corsOptions));
+
+// Security logging and monitoring
+app.use(securityLogger);
+
+// Input sanitization
+app.use(sanitizeInput);
+
+// General rate limiting
+app.use(generalLimiter);
 
 // Configure Nunjucks template engine
 const templatePath = path.join(__dirname, 'templates');
@@ -62,6 +91,12 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Cache middleware for frontend pages
+app.use(cacheService.middleware({
+  maxAge: 300, // 5 minutes
+  cacheControl: 'public'
+}));
+
 // Static file serving
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -70,18 +105,34 @@ app.use('/media', express.static(path.join(__dirname, 'content'), {
   index: false,
   setHeaders: (res, filePath) => {
     // Only allow certain file types to be served
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.svg'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.svg', '.txt', '.doc', '.docx'];
     const ext = path.extname(filePath).toLowerCase();
     
     if (!allowedExtensions.includes(ext)) {
       res.status(403);
       return false;
     }
+    
+    // Set proper content type for images
+    if (['.jpg', '.jpeg'].includes(ext)) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (ext === '.png') {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (ext === '.gif') {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (ext === '.webp') {
+      res.setHeader('Content-Type', 'image/webp');
+    } else if (ext === '.svg') {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    } else if (ext === '.pdf') {
+      res.setHeader('Content-Type', 'application/pdf');
+    }
   }
 }));
 
-// Routes
-app.use('/admin', adminRoutes);
+// Routes with specific rate limiting
+app.use('/api', apiLimiter, apiRoutes);
+app.use('/admin', adminSecurityCheck, adminRoutes);
 app.use('/', frontendRoutes);
 
 // 404 handler
@@ -119,11 +170,23 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Stack Blog server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Templates: ${templatePath}`);
-});
+// Initialize plugins and start server
+async function startServer() {
+  try {
+    await pluginService.init();
+    
+    app.listen(PORT, () => {
+      console.log(`Stack Blog server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Templates: ${templatePath}`);
+      console.log(`Plugins loaded: ${pluginService.getAllPlugins().length}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;

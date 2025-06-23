@@ -8,24 +8,24 @@ describe('MarkdownService', () => {
   });
 
   describe('render', () => {
-    test('should render basic markdown to HTML', () => {
+    test('should render basic markdown to HTML', async () => {
       const markdown = '# Hello World\n\nThis is **bold** text.';
-      const result = markdownService.render(markdown);
+      const result = await markdownService.render(markdown);
       
       expect(result).toContain('<h1');
       expect(result).toContain('Hello World');
       expect(result).toContain('<strong>bold</strong>');
     });
 
-    test('should handle empty content', () => {
-      expect(markdownService.render('')).toBe('');
-      expect(markdownService.render(null)).toBe('');
-      expect(markdownService.render(undefined)).toBe('');
+    test('should handle empty content', async () => {
+      expect(await markdownService.render('')).toBe('');
+      expect(await markdownService.render(null)).toBe('');
+      expect(await markdownService.render(undefined)).toBe('');
     });
 
-    test('should add id attributes to headings', () => {
+    test('should add id attributes to headings', async () => {
       const markdown = '# Hello World\n## Sub Heading';
-      const result = markdownService.render(markdown);
+      const result = await markdownService.render(markdown);
       
       expect(result).toContain('id="hello-world"');
       expect(result).toContain('id="sub-heading"');
