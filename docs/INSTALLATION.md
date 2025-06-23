@@ -5,19 +5,19 @@ This guide provides step-by-step installation instructions for Stack Blog CMS us
 ## 📋 System Requirements
 
 ### Minimum Requirements
-- **Node.js**: 16.x or higher (18.x recommended)
-- **npm**: 8.x or higher
-- **Memory**: 512MB RAM (2GB+ recommended for production)
-- **Storage**: 1GB free space (SSD recommended)
+- **Node.js**: 16.x or higher
+- **npm**: 8.x or higher  
+- **Memory**: 256MB RAM
+- **Storage**: 100MB free space
 - **OS**: Linux, macOS, or Windows
 
 ### Recommended Production Environment
-- **Node.js**: 18.x LTS
-- **Memory**: 2GB+ RAM
-- **Storage**: SSD with 5GB+ free space
-- **OS**: Ubuntu 20.04+ / Debian 11+ / CentOS 8+
-- **Reverse Proxy**: Nginx or Apache
-- **SSL Certificate**: Let's Encrypt or commercial certificate
+- **Node.js**: 16.x or higher (18.x LTS recommended for long-term support)
+- **Memory**: 512MB RAM (lightweight like Kirby CMS)
+- **Storage**: 500MB free space (grows with your content)
+- **OS**: Any modern Linux distribution, macOS, or Windows
+- **Reverse Proxy**: Nginx or Apache (optional for small sites)
+- **SSL Certificate**: Let's Encrypt (optional for HTTPS)
 
 ## 🚀 Installation Methods
 
