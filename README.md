@@ -29,8 +29,10 @@ A modern, secure flat-file CMS built with Node.js that manages content using Mar
 
 ## 📋 Requirements
 
-- **Node.js**: 18.x or higher
-- **npm**: 8.x or higher
+- **Node.js**: 16.x or higher
+- **npm**: 8.x or higher  
+- **Memory**: 256MB RAM minimum (512MB recommended)
+- **Storage**: 100MB free space (lightweight like Kirby CMS)
 - **Operating System**: Linux, macOS, or Windows
 
 ## 🛠️ Installation
