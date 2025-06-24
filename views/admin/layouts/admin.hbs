@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{#if page.metadata.title}}{{page.metadata.title}} - {{/if}}{{site.title}} Admin</title>
+    
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="generator" content="Stack Blog CMS">
+    
+    <!-- Bulma CSS Framework -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    
+    <!-- Admin CSS -->
+    <link rel="stylesheet" href="/css/admin.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    {{#block "head"}}{{/block}}
+</head>
+<body>
+    <div class="admin-wrapper">
+        {{#if user}}
+        <!-- Navigation Bar -->
+        {{> navigation}}
+        
+        <!-- Main Content Area -->
+        <div class="admin-main">
+            <!-- Sidebar -->
+            {{> sidebar}}
+            
+            <!-- Content Area -->
+            <main class="admin-content">
+                <!-- Flash Messages -->
+                {{> flash-messages}}
+                
+                <!-- Page Content -->
+                {{{body}}}
+            </main>
+        </div>
+        {{/if}}
+    </div>
+    
+    <!-- Admin JavaScript -->
+    <script src="/js/admin.js"></script>
+    
+    {{#block "scripts"}}{{/block}}
+</body>
+</html>

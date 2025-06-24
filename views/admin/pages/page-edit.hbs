@@ -1,0 +1,390 @@
+<div class="content-header">
+    <div class="level">
+        <div class="level-left">
+            <h1>
+                <span class="icon">
+                    <i class="fas fa-{{#if editPage}}edit{{else}}plus{{/if}}"></i>
+                </span>
+                {{#if editPage}}Edit Page{{else}}Create New Page{{/if}}
+            </h1>
+        </div>
+        <div class="level-right">
+            <a href="/admin/pages" class="button">
+                <span class="icon">
+                    <i class="fas fa-arrow-left"></i>
+                </span>
+                <span>Back to Pages</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<form method="post" action="/admin/pages{{#if editPage}}/{{editPage.slug}}{{/if}}" class="page-editor">
+    {{{csrf}}}
+    
+    <div class="columns">
+        <!-- Main Content Area -->
+        <div class="column is-8">
+            <div class="box">
+                <div class="field">
+                    <label class="label" for="title">Title *</label>
+                    <div class="control">
+                        <input 
+                            class="input is-large" 
+                            type="text" 
+                            id="title" 
+                            name="title" 
+                            value="{{#if editPage}}{{editPage.metadata.title}}{{/if}}"
+                            required 
+                            placeholder="Enter page title..."
+                            autofocus
+                        >
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="slug">Slug *</label>
+                    <div class="control">
+                        <input 
+                            class="input" 
+                            type="text" 
+                            id="slug" 
+                            name="slug" 
+                            value="{{#if editPage}}{{editPage.slug}}{{/if}}"
+                            required 
+                            placeholder="page-url-slug"
+                            pattern="[a-z0-9\-]+"
+                            title="Lowercase letters, numbers, and hyphens only"
+                        >
+                    </div>
+                    <p class="help">
+                        URL-friendly version of the title (lowercase, hyphens only)
+                        {{#unless editPage}}
+                        <br><small>Will be auto-generated from title if left empty</small>
+                        {{/unless}}
+                    </p>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="description">Description</label>
+                    <div class="control">
+                        <textarea 
+                            class="textarea" 
+                            id="description" 
+                            name="description" 
+                            rows="2"
+                            placeholder="Brief description for SEO and previews..."
+                        >{{#if editPage}}{{editPage.metadata.description}}{{/if}}</textarea>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="content">Content *</label>
+                    <div class="control">
+                        <textarea 
+                            class="textarea is-family-monospace" 
+                            id="content" 
+                            name="content" 
+                            rows="20"
+                            required
+                            placeholder="Write your content in Markdown..."
+                        >{{#if editPage}}{{editPage.content}}{{/if}}</textarea>
+                    </div>
+                    <p class="help">
+                        <a href="https://www.markdownguide.org/basic-syntax/" target="_blank">
+                            <span class="icon">
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                            Markdown syntax guide
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="column is-4">
+            <!-- Publish Settings -->
+            <div class="box">
+                <h3 class="title is-5">
+                    <span class="icon">
+                        <i class="fas fa-cog"></i>
+                    </span>
+                    Publish Settings
+                </h3>
+
+                <div class="field">
+                    <div class="control">
+                        <label class="checkbox">
+                            <input 
+                                type="checkbox" 
+                                name="published" 
+                                value="1"
+                                {{#if editPage}}{{#if editPage.metadata.published}}checked{{/if}}{{/if}}
+                            >
+                            <strong>Published</strong>
+                        </label>
+                    </div>
+                    <p class="help">Uncheck to save as draft</p>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="date">Publish Date</label>
+                    <div class="control">
+                        <input 
+                            class="input" 
+                            type="datetime-local" 
+                            id="date" 
+                            name="date"
+                            value="{{#if editPage}}{{#if editPage.metadata.date}}{{editPage.metadata.date}}{{/if}}{{/if}}"
+                        >
+                    </div>
+                    <p class="help">Leave empty to use current date/time</p>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="author">Author</label>
+                    <div class="control">
+                        <input 
+                            class="input" 
+                            type="text" 
+                            id="author" 
+                            name="author"
+                            value="{{#if editPage}}{{editPage.metadata.author}}{{else}}{{user.username}}{{/if}}"
+                            placeholder="Author name"
+                        >
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Action Buttons -->
+                <div class="field is-grouped">
+                    <div class="control is-expanded">
+                        <button type="submit" name="action" value="save" class="button is-primary is-fullwidth">
+                            <span class="icon">
+                                <i class="fas fa-save"></i>
+                            </span>
+                            <span>{{#if editPage}}Update{{else}}Create{{/if}} Page</span>
+                        </button>
+                    </div>
+                </div>
+
+                {{#if editPage}}
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" name="action" value="save_continue" class="button is-info is-fullwidth">
+                            <span class="icon">
+                                <i class="fas fa-save"></i>
+                            </span>
+                            <span>Save & Continue Editing</span>
+                        </button>
+                    </div>
+                </div>
+
+                {{#if editPage.metadata.published}}
+                <div class="field">
+                    <div class="control">
+                        <a href="/{{editPage.slug}}" target="_blank" class="button is-success is-fullwidth">
+                            <span class="icon">
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                            <span>View Live Page</span>
+                        </a>
+                    </div>
+                </div>
+                {{/if}}
+                {{/if}}
+            </div>
+
+            <!-- SEO Settings -->
+            <div class="box">
+                <h3 class="title is-5">
+                    <span class="icon">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    SEO Settings
+                </h3>
+
+                <div class="field">
+                    <label class="label" for="metaTitle">Meta Title</label>
+                    <div class="control">
+                        <input 
+                            class="input" 
+                            type="text" 
+                            id="metaTitle" 
+                            name="metaTitle"
+                            value="{{#if editPage}}{{editPage.metadata.metaTitle}}{{/if}}"
+                            placeholder="SEO title (60 chars max)"
+                            maxlength="60"
+                        >
+                    </div>
+                    <p class="help">Leave empty to use page title</p>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="metaDescription">Meta Description</label>
+                    <div class="control">
+                        <textarea 
+                            class="textarea" 
+                            id="metaDescription" 
+                            name="metaDescription"
+                            rows="3"
+                            placeholder="SEO description (160 chars max)"
+                            maxlength="160"
+                        >{{#if editPage}}{{editPage.metadata.metaDescription}}{{/if}}</textarea>
+                    </div>
+                    <p class="help">Leave empty to use page description</p>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="tags">Tags</label>
+                    <div class="control">
+                        <input 
+                            class="input" 
+                            type="text" 
+                            id="tags" 
+                            name="tags"
+                            value="{{#if editPage}}{{#if editPage.metadata.tags}}{{join editPage.metadata.tags ','}}{{/if}}{{/if}}"
+                            placeholder="tag1, tag2, tag3"
+                        >
+                    </div>
+                    <p class="help">Comma-separated tags</p>
+                </div>
+            </div>
+
+            {{#if editPage}}
+            <!-- Page Info -->
+            <div class="box">
+                <h3 class="title is-5">
+                    <span class="icon">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                    Page Info
+                </h3>
+
+                <div class="content is-small">
+                    <p>
+                        <strong>Created:</strong><br>
+                        {{#if editPage.metadata.date}}
+                        {{formatDate editPage.metadata.date}}
+                        {{else}}
+                        Unknown
+                        {{/if}}
+                    </p>
+
+                    <p>
+                        <strong>Last Updated:</strong><br>
+                        {{#if editPage.updatedAt}}
+                        {{formatDate editPage.updatedAt}}
+                        {{else}}
+                        Unknown
+                        {{/if}}
+                    </p>
+
+                    <p>
+                        <strong>File Path:</strong><br>
+                        <code>content/pages/{{editPage.slug}}.md</code>
+                    </p>
+                </div>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+</form>
+
+<style>
+.page-editor .textarea {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.content-header {
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 6px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #3273dc;
+}
+
+.stat-label {
+    color: #7a7a7a;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+</style>
+
+<script>
+// Auto-generate slug from title for new pages
+document.addEventListener('DOMContentLoaded', function() {
+    const titleInput = document.getElementById('title');
+    const slugInput = document.getElementById('slug');
+    const isNewPage = !slugInput.value;
+    
+    if (isNewPage) {
+        titleInput.addEventListener('input', function() {
+            const slug = this.value
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            
+            slugInput.value = slug;
+        });
+    }
+    
+    // Character count for meta fields
+    const metaTitle = document.getElementById('metaTitle');
+    const metaDescription = document.getElementById('metaDescription');
+    
+    function updateCharCount(input, maxLength) {
+        const current = input.value.length;
+        const helpText = input.parentNode.nextElementSibling;
+        const remaining = maxLength - current;
+        
+        if (remaining < 10) {
+            helpText.style.color = '#ff3860';
+        } else if (remaining < 20) {
+            helpText.style.color = '#ffdd57';
+        } else {
+            helpText.style.color = '#7a7a7a';
+        }
+        
+        helpText.textContent = helpText.textContent.split('(')[0] + `(${remaining} chars remaining)`;
+    }
+    
+    if (metaTitle) {
+        metaTitle.addEventListener('input', function() {
+            updateCharCount(this, 60);
+        });
+        updateCharCount(metaTitle, 60);
+    }
+    
+    if (metaDescription) {
+        metaDescription.addEventListener('input', function() {
+            updateCharCount(this, 160);
+        });
+        updateCharCount(metaDescription, 160);
+    }
+});
+</script>
