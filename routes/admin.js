@@ -601,7 +601,7 @@ router.get('/setup', (req, res) => {
     return res.redirect('/admin/login');
   }
 
-  res.render('admin/setup', {
+  res.render('pages/setup', {
     page: {
       metadata: {
         title: 'Admin Setup'
@@ -611,7 +611,8 @@ router.get('/setup', (req, res) => {
       title: 'Stack Blog',
       description: 'Initial Setup'
     },
-    currentPath: req.path
+    currentPath: req.path,
+    csrfToken: req.csrfToken()
   });
 });
 
@@ -655,7 +656,8 @@ router.get('/pages', authService.requireAuth.bind(authService), csrfProtection, 
     });
   } catch (error) {
     console.error('Error loading pages:', error);
-    res.status(500).render('admin/error', {
+    res.status(500).render('pages/error', {
+      layout: 'admin',
       page: {
         metadata: {
           title: 'Error'
@@ -706,7 +708,8 @@ router.get('/pages/:slug/edit', authService.requireAuth.bind(authService), csrfP
     const editPage = await contentService.getPage(slug);
     
     if (!editPage) {
-      return res.status(404).render('admin/error', {
+      return res.status(404).render('pages/error', {
+        layout: 'admin',
         page: {
           metadata: {
             title: 'Page Not Found'
@@ -739,7 +742,8 @@ router.get('/pages/:slug/edit', authService.requireAuth.bind(authService), csrfP
     });
   } catch (error) {
     console.error('Error loading page for editing:', error);
-    res.status(500).render('admin/error', {
+    res.status(500).render('pages/error', {
+      layout: 'admin',
       page: {
         metadata: {
           title: 'Error'
@@ -822,7 +826,8 @@ router.post('/pages/save', authService.requireAuth.bind(authService), csrfProtec
       });
     }
     
-    res.status(500).render('admin/error', {
+    res.status(500).render('pages/error', {
+      layout: 'admin',
       page: {
         metadata: {
           title: 'Save Error'
@@ -913,7 +918,8 @@ router.get('/media', authService.requireAuth.bind(authService), csrfProtection, 
     });
   } catch (error) {
     console.error('Error loading media:', error);
-    res.status(500).render('admin/error', {
+    res.status(500).render('pages/error', {
+      layout: 'admin',
       page: {
         metadata: {
           title: 'Error'

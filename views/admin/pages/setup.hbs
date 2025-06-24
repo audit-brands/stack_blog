@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{page.metadata.title}} - {{site.title}}</title>
+    
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="generator" content="Stack Blog CMS">
+    
+    <!-- Bulma CSS Framework -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    <style>
+        body {
+            background-color: #f5f5f5;
+        }
+        .setup-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .setup-box {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+        }
+        .setup-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .setup-header h1 {
+            color: #3273dc;
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .setup-header h2 {
+            color: #7a7a7a;
+            font-size: 1.125rem;
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-box">
+            <div class="setup-header">
+                <h1>
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-layer-group"></i>
+                        </span>
+                        <span>{{site.title}}</span>
+                    </span>
+                </h1>
+                <h2>{{page.metadata.title}}</h2>
+            </div>
+
+            <div class="notification is-info">
+                <h4><strong>Welcome to Stack Blog!</strong></h4>
+                <p>Set up your admin account to get started with your new CMS.</p>
+            </div>
+
+            <form method="post" action="/admin/setup">
+                {{{csrf}}}
+                
+                <div class="field">
+                    <label class="label" for="username">Admin Username</label>
+                    <div class="control has-icons-left">
+                        <input 
+                            class="input" 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            required 
+                            autocomplete="username"
+                            autofocus
+                            placeholder="Enter admin username"
+                        >
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-user"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="password">Admin Password</label>
+                    <div class="control has-icons-left">
+                        <input 
+                            class="input" 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            required 
+                            autocomplete="new-password"
+                            placeholder="Enter admin password"
+                            minlength="8"
+                        >
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                    </div>
+                    <p class="help">Minimum 8 characters required</p>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="confirmPassword">Confirm Password</label>
+                    <div class="control has-icons-left">
+                        <input 
+                            class="input" 
+                            type="password" 
+                            id="confirmPassword" 
+                            name="confirmPassword" 
+                            required 
+                            autocomplete="new-password"
+                            placeholder="Confirm admin password"
+                        >
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="siteTitle">Site Title</label>
+                    <div class="control has-icons-left">
+                        <input 
+                            class="input" 
+                            type="text" 
+                            id="siteTitle" 
+                            name="siteTitle" 
+                            value="Stack Blog"
+                            placeholder="Your site title"
+                        >
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-globe"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="siteDescription">Site Description</label>
+                    <div class="control">
+                        <textarea 
+                            class="textarea" 
+                            id="siteDescription" 
+                            name="siteDescription" 
+                            rows="3"
+                            placeholder="Brief description of your site"
+                        >A powerful flat-file CMS built with Node.js</textarea>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-primary is-fullwidth is-large">
+                            <span class="icon">
+                                <i class="fas fa-rocket"></i>
+                            </span>
+                            <span>Complete Setup</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="has-text-centered" style="margin-top: 1.5rem;">
+                <p class="is-size-7 has-text-grey">
+                    <i class="fas fa-shield-alt"></i>
+                    This information is stored securely and can be changed later.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password confirmation validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+            
+            function validatePasswords() {
+                if (password.value !== confirmPassword.value) {
+                    confirmPassword.setCustomValidity('Passwords do not match');
+                } else {
+                    confirmPassword.setCustomValidity('');
+                }
+            }
+            
+            password.addEventListener('input', validatePasswords);
+            confirmPassword.addEventListener('input', validatePasswords);
+        });
+    </script>
+</body>
+</html>
