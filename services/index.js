@@ -8,6 +8,9 @@ const SearchService = require('./SearchService');
 const ThemeService = require('./ThemeService');
 const GhostContextService = require('./GhostContextService');
 const RoutesService = require('./RoutesService');
+const ThemeValidationService = require('./ThemeValidationService');
+const TemplateCacheService = require('./TemplateCacheService');
+const PerformanceService = require('./PerformanceService');
 
 // Create singleton instances
 const cacheService = new CacheService();
@@ -19,6 +22,9 @@ const mediaService = new MediaService();
 const searchService = new SearchService(contentService, markdownService, cacheService);
 const ghostContextService = new GhostContextService(contentService, markdownService);
 const routesService = new RoutesService();
+const themeValidationService = new ThemeValidationService();
+const templateCacheService = new TemplateCacheService();
+const performanceService = new PerformanceService();
 
 // Note: ThemeService will be initialized in app.js with app reference
 let themeService = null;
@@ -34,6 +40,9 @@ module.exports = {
   ThemeService,
   GhostContextService,
   RoutesService,
+  ThemeValidationService,
+  TemplateCacheService,
+  PerformanceService,
   contentService,
   markdownService,
   authService,
@@ -43,6 +52,9 @@ module.exports = {
   searchService,
   ghostContextService,
   routesService,
+  themeValidationService,
+  templateCacheService,
+  performanceService,
   setThemeService: (service) => { themeService = service; },
   getThemeService: () => themeService
 };

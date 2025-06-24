@@ -1,6 +1,6 @@
 const express = require('express');
 const csrf = require('csurf');
-const { authService, contentService, mediaService, cacheService, pluginService, searchService, getThemeService } = require('../services');
+const { authService, contentService, mediaService, cacheService, pluginService, searchService, getThemeService, themeValidationService, templateCacheService } = require('../services');
 const { authLimiter, uploadLimiter, uploadSecurityCheck } = require('../middleware/security');
 const { validateLogin, validatePage, validateSlug, validatePlugin, validatePassword } = require('../middleware/validation');
 
@@ -610,6 +610,7 @@ router.get('/media/:filename/info', authService.requireAuth.bind(authService), a
 router.get('/cache', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   const user = authService.getAuthenticatedUser(req.session);
   const stats = cacheService.getStats();
+  const templateCacheStats = templateCacheService.getStats();
   
   res.render('admin/cache', {
     page: {
@@ -623,6 +624,7 @@ router.get('/cache', authService.requireAuth.bind(authService), csrfProtection, 
     },
     user,
     stats,
+    templateCacheStats,
     csrfToken: req.csrfToken(),
     currentPath: req.path
   });
@@ -633,12 +635,22 @@ router.get('/cache', authService.requireAuth.bind(authService), csrfProtection, 
  */
 router.post('/cache/clear', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   try {
-    cacheService.clear();
+    const { type } = req.body;
+    
+    if (type === 'template') {
+      templateCacheService.clearAll();
+    } else if (type === 'content') {
+      cacheService.clear();
+    } else {
+      // Clear both
+      cacheService.clear();
+      templateCacheService.clearAll();
+    }
     
     if (req.xhr || req.headers.accept === 'application/json') {
       return res.json({
         success: true,
-        message: 'Cache cleared successfully'
+        message: `${type || 'All'} cache cleared successfully`
       });
     }
     
@@ -1013,6 +1025,359 @@ router.post('/api/themes/activate', authService.requireAuth.bind(authService), c
     });
   }
 });
+
+/**
+ * API: Validate theme with GScan
+ */
+router.post('/api/themes/:themeName/validate', authService.requireAuth.bind(authService), async (req, res) => {
+  try {
+    const { themeName } = req.params;
+    const themeService = getThemeService();
+    
+    if (!themeService) {
+      return res.status(500).json({ error: 'Theme service not available' });
+    }
+    
+    const themePath = path.join(themeService.themesPath, themeName);
+    const themeExists = await themeService.themeExists(themeName);
+    
+    if (!themeExists) {
+      return res.status(404).json({ error: 'Theme not found' });
+    }
+    
+    const validation = await themeValidationService.getStackBlogCompatibility(themePath, themeName);
+    
+    res.json({
+      success: true,
+      validation,
+      theme: themeName,
+      validatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error validating theme:', error);
+    res.status(500).json({
+      error: 'Failed to validate theme',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * API: Validate all themes
+ */
+router.post('/api/themes/validate-all', authService.requireAuth.bind(authService), async (req, res) => {
+  try {
+    const themeService = getThemeService();
+    
+    if (!themeService) {
+      return res.status(500).json({ error: 'Theme service not available' });
+    }
+    
+    const themes = await themeService.listThemes();
+    const themePaths = themes.map(theme => 
+      path.join(themeService.themesPath, theme.name)
+    );
+    
+    const validations = await themeValidationService.validateThemes(themePaths);
+    
+    res.json({
+      success: true,
+      validations,
+      count: Object.keys(validations).length,
+      validatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error validating themes:', error);
+    res.status(500).json({
+      error: 'Failed to validate themes',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * API: Upload theme
+ */
+router.post('/api/themes/upload', uploadLimiter, authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const multer = require('multer');
+    const AdmZip = require('adm-zip');
+    
+    // Configure multer for theme uploads
+    const storage = multer.memoryStorage();
+    const upload = multer({
+      storage: storage,
+      limits: {
+        fileSize: 50 * 1024 * 1024 // 50MB limit
+      },
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/zip' || 
+            file.mimetype === 'application/x-zip-compressed' ||
+            file.originalname.endsWith('.zip')) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only ZIP files are allowed'));
+        }
+      }
+    }).single('themeFile');
+
+    upload(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({
+          error: 'Upload failed',
+          message: err.message
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          error: 'No file uploaded'
+        });
+      }
+
+      try {
+        const result = await extractAndInstallTheme(req.file, req.body.themeName);
+        
+        res.json({
+          success: true,
+          theme: result.themeName,
+          message: `Theme "${result.themeName}" uploaded successfully`,
+          validation: result.validation
+        });
+      } catch (extractError) {
+        console.error('Error extracting theme:', extractError);
+        res.status(500).json({
+          error: 'Failed to extract theme',
+          message: extractError.message
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error uploading theme:', error);
+    res.status(500).json({
+      error: 'Upload failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * API: Delete theme
+ */
+router.post('/api/themes/:themeName/delete', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const { themeName } = req.params;
+    const themeService = getThemeService();
+    
+    if (!themeService) {
+      return res.status(500).json({ error: 'Theme service not available' });
+    }
+
+    // Prevent deletion of active theme
+    if (themeService.activeTheme === themeName) {
+      return res.status(400).json({
+        error: 'Cannot delete active theme',
+        message: 'Please switch to a different theme before deleting this one'
+      });
+    }
+
+    // Prevent deletion of default themes
+    const protectedThemes = ['default', 'casper-basic'];
+    if (protectedThemes.includes(themeName)) {
+      return res.status(400).json({
+        error: 'Cannot delete protected theme',
+        message: `The theme "${themeName}" is protected and cannot be deleted`
+      });
+    }
+
+    const themePath = path.join(themeService.themesPath, themeName);
+    const themeExists = await themeService.themeExists(themeName);
+    
+    if (!themeExists) {
+      return res.status(404).json({ error: 'Theme not found' });
+    }
+
+    // Delete theme directory
+    const fs = require('fs').promises;
+    await fs.rm(themePath, { recursive: true, force: true });
+
+    // Clear theme cache
+    if (templateCacheService) {
+      templateCacheService.invalidateTheme(themeName);
+    }
+
+    res.json({
+      success: true,
+      message: `Theme "${themeName}" deleted successfully`
+    });
+  } catch (error) {
+    console.error('Error deleting theme:', error);
+    res.status(500).json({
+      error: 'Failed to delete theme',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * API: Export theme
+ */
+router.get('/api/themes/:themeName/export', authService.requireAuth.bind(authService), async (req, res) => {
+  try {
+    const { themeName } = req.params;
+    const themeService = getThemeService();
+    
+    if (!themeService) {
+      return res.status(500).json({ error: 'Theme service not available' });
+    }
+
+    const themePath = path.join(themeService.themesPath, themeName);
+    const themeExists = await themeService.themeExists(themeName);
+    
+    if (!themeExists) {
+      return res.status(404).json({ error: 'Theme not found' });
+    }
+
+    const AdmZip = require('adm-zip');
+    const zip = new AdmZip();
+    
+    // Add theme directory to zip
+    zip.addLocalFolder(themePath, themeName);
+    
+    const zipBuffer = zip.toBuffer();
+    
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${themeName}.zip"`);
+    res.setHeader('Content-Length', zipBuffer.length);
+    
+    res.send(zipBuffer);
+  } catch (error) {
+    console.error('Error exporting theme:', error);
+    res.status(500).json({
+      error: 'Failed to export theme',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Helper function to extract and install theme from uploaded ZIP
+ */
+async function extractAndInstallTheme(file, customThemeName = null) {
+  const AdmZip = require('adm-zip');
+  const fs = require('fs').promises;
+  const path = require('path');
+  
+  try {
+    const zip = new AdmZip(file.buffer);
+    const entries = zip.getEntries();
+    
+    if (entries.length === 0) {
+      throw new Error('ZIP file is empty');
+    }
+
+    // Determine theme name
+    let themeName = customThemeName;
+    if (!themeName) {
+      // Try to extract theme name from package.json or use first directory
+      const packageEntry = entries.find(entry => entry.entryName.endsWith('package.json'));
+      if (packageEntry) {
+        try {
+          const packageJson = JSON.parse(packageEntry.getData().toString('utf8'));
+          themeName = packageJson.name || path.basename(file.originalname, '.zip');
+        } catch (e) {
+          themeName = path.basename(file.originalname, '.zip');
+        }
+      } else {
+        // Use first directory name or filename
+        const firstDir = entries.find(entry => entry.isDirectory);
+        themeName = firstDir ? firstDir.entryName.split('/')[0] : path.basename(file.originalname, '.zip');
+      }
+    }
+
+    // Sanitize theme name
+    themeName = themeName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+
+    const themeService = getThemeService();
+    if (!themeService) {
+      throw new Error('Theme service not available');
+    }
+
+    const themePath = path.join(themeService.themesPath, themeName);
+    
+    // Check if theme already exists
+    const themeExists = await themeService.themeExists(themeName);
+    if (themeExists) {
+      throw new Error(`Theme "${themeName}" already exists`);
+    }
+
+    // Create theme directory
+    await fs.mkdir(themePath, { recursive: true });
+
+    // Extract files
+    let hasValidThemeFiles = false;
+    for (const entry of entries) {
+      if (entry.isDirectory) continue;
+      
+      // Skip unwanted files
+      const entryPath = entry.entryName;
+      if (entryPath.includes('__MACOSX') || 
+          entryPath.includes('.DS_Store') ||
+          entryPath.includes('Thumbs.db')) {
+        continue;
+      }
+
+      // Remove theme directory prefix if present
+      let relativePath = entryPath;
+      const pathParts = relativePath.split('/');
+      if (pathParts.length > 1 && pathParts[0] === themeName) {
+        relativePath = pathParts.slice(1).join('/');
+      }
+
+      if (!relativePath) continue;
+
+      const outputPath = path.join(themePath, relativePath);
+      const outputDir = path.dirname(outputPath);
+
+      // Create directory if it doesn't exist
+      await fs.mkdir(outputDir, { recursive: true });
+
+      // Write file
+      const fileData = entry.getData();
+      await fs.writeFile(outputPath, fileData);
+
+      // Check for essential theme files
+      if (relativePath === 'index.hbs' || 
+          relativePath === 'post.hbs' || 
+          relativePath === 'package.json') {
+        hasValidThemeFiles = true;
+      }
+    }
+
+    if (!hasValidThemeFiles) {
+      // Clean up
+      await fs.rm(themePath, { recursive: true, force: true });
+      throw new Error('Invalid theme: missing essential files (index.hbs, post.hbs, or package.json)');
+    }
+
+    // Validate the theme
+    let validation = null;
+    try {
+      validation = await themeValidationService.getStackBlogCompatibility(themePath, themeName);
+    } catch (validationError) {
+      console.warn('Theme validation failed:', validationError.message);
+    }
+
+    return {
+      themeName,
+      themePath,
+      validation
+    };
+
+  } catch (error) {
+    throw new Error(`Failed to extract theme: ${error.message}`);
+  }
+}
 
 /**
  * Helper function to list theme files recursively

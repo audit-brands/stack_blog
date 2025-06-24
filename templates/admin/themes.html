@@ -15,6 +15,18 @@
             </span>
             <span>Refresh Themes</span>
         </button>
+        <button class="button is-warning" onclick="validateAllThemes()">
+            <span class="icon">
+                <i class="fas fa-check-double"></i>
+            </span>
+            <span>Validate All</span>
+        </button>
+        <button class="button is-success" onclick="showUploadModal()">
+            <span class="icon">
+                <i class="fas fa-upload"></i>
+            </span>
+            <span>Upload Theme</span>
+        </button>
     </div>
 </div>
 
@@ -110,6 +122,73 @@
     </div>
 </div>
 
+<!-- Theme Validation Modal -->
+<div class="modal" id="theme-validation-modal">
+    <div class="modal-background" onclick="closeValidationModal()"></div>
+    <div class="modal-card" style="width: 90%; max-width: 800px;">
+        <header class="modal-card-head">
+            <p class="modal-card-title" id="validation-modal-title">Theme Validation Results</p>
+            <button class="delete" aria-label="close" onclick="closeValidationModal()"></button>
+        </header>
+        <section class="modal-card-body" id="validation-modal-body">
+            <!-- Content will be populated by JavaScript -->
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button" onclick="closeValidationModal()">Close</button>
+        </footer>
+    </div>
+</div>
+
+<!-- Theme Upload Modal -->
+<div class="modal" id="theme-upload-modal">
+    <div class="modal-background" onclick="closeUploadModal()"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Upload Theme</p>
+            <button class="delete" aria-label="close" onclick="closeUploadModal()"></button>
+        </header>
+        <section class="modal-card-body">
+            <form id="theme-upload-form" enctype="multipart/form-data">
+                <div class="field">
+                    <label class="label">Theme ZIP File</label>
+                    <div class="control">
+                        <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                                <input class="file-input" type="file" name="themeFile" accept=".zip" required>
+                                <span class="file-cta">
+                                    <span class="file-icon">
+                                        <i class="fas fa-upload"></i>
+                                    </span>
+                                    <span class="file-label">Choose file…</span>
+                                </span>
+                                <span class="file-name">No file selected</span>
+                            </label>
+                        </div>
+                    </div>
+                    <p class="help">Upload a ZIP file containing a Ghost theme. Maximum size: 50MB</p>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Theme Name (Optional)</label>
+                    <div class="control">
+                        <input class="input" type="text" name="themeName" placeholder="Leave empty to use original name">
+                    </div>
+                    <p class="help">Override the theme name. If empty, the name will be extracted from package.json or filename.</p>
+                </div>
+            </form>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-success" onclick="uploadTheme()">
+                <span class="icon">
+                    <i class="fas fa-upload"></i>
+                </span>
+                <span>Upload</span>
+            </button>
+            <button class="button" onclick="closeUploadModal()">Cancel</button>
+        </footer>
+    </div>
+</div>
+
 <script>
 let currentThemeData = null;
 let selectedTheme = null;
@@ -168,6 +247,40 @@ async function loadThemes() {
                                 </span>
                                 <span>Details</span>
                             </button>
+                            <div class="dropdown is-hoverable">
+                                <div class="dropdown-trigger">
+                                    <button class="button is-small" aria-haspopup="true" aria-controls="dropdown-menu">
+                                        <span class="icon">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </span>
+                                    </button>
+                                </div>
+                                <div class="dropdown-menu" role="menu">
+                                    <div class="dropdown-content">
+                                        <a class="dropdown-item" onclick="validateTheme('${theme.name}')">
+                                            <span class="icon">
+                                                <i class="fas fa-check-circle"></i>
+                                            </span>
+                                            Validate
+                                        </a>
+                                        <a class="dropdown-item" onclick="exportTheme('${theme.name}')">
+                                            <span class="icon">
+                                                <i class="fas fa-download"></i>
+                                            </span>
+                                            Export
+                                        </a>
+                                        ${!['default', 'casper-basic'].includes(theme.name) && currentThemeData?.name !== theme.name ? `
+                                            <hr class="dropdown-divider">
+                                            <a class="dropdown-item has-text-danger" onclick="deleteTheme('${theme.name}')">
+                                                <span class="icon">
+                                                    <i class="fas fa-trash"></i>
+                                                </span>
+                                                Delete
+                                            </a>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
                             ${currentThemeData && currentThemeData.name === theme.name ? '' : `
                                 <button class="button is-small is-primary" onclick="activateThemeDirectly('${theme.name}', '${theme.engine === 'ghost' ? 'handlebars' : theme.engine}')">
                                     <span class="icon">
@@ -376,6 +489,343 @@ async function refreshThemes() {
     showNotification('Themes refreshed!', 'is-success');
 }
 
+async function validateTheme(themeName) {
+    try {
+        showNotification(`Validating theme "${themeName}"...`, 'is-info');
+        
+        const response = await fetch(`/admin/api/themes/${themeName}/validate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showValidationResults(result.validation, themeName);
+        } else {
+            showNotification(result.error || 'Failed to validate theme', 'is-danger');
+        }
+        
+    } catch (error) {
+        console.error('Error validating theme:', error);
+        showNotification('Error validating theme', 'is-danger');
+    }
+}
+
+async function validateAllThemes() {
+    try {
+        showNotification('Validating all themes...', 'is-info');
+        
+        const response = await fetch('/admin/api/themes/validate-all', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showBatchValidationResults(result.validations);
+            showNotification(`Validated ${result.count} themes!`, 'is-success');
+        } else {
+            showNotification(result.error || 'Failed to validate themes', 'is-danger');
+        }
+        
+    } catch (error) {
+        console.error('Error validating themes:', error);
+        showNotification('Error validating themes', 'is-danger');
+    }
+}
+
+function showValidationResults(validation, themeName) {
+    document.getElementById('validation-modal-title').textContent = `${themeName} Validation Results`;
+    
+    const modalBody = document.getElementById('validation-modal-body');
+    modalBody.innerHTML = `
+        <div class="content">
+            <div class="box">
+                <h4>Overall Status</h4>
+                <div class="level">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <span class="tag ${getCompatibilityClass(validation.summary.compatibility)} is-large">
+                                ${validation.summary.compatibility.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <div class="level-item">
+                            <span class="tag ${validation.valid ? 'is-success' : 'is-danger'}">
+                                ${validation.valid ? 'VALID' : 'INVALID'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="columns">
+                    <div class="column">
+                        <div class="has-text-centered">
+                            <p class="heading">Errors</p>
+                            <p class="title is-4 ${validation.summary.errorCount > 0 ? 'has-text-danger' : 'has-text-success'}">
+                                ${validation.summary.errorCount}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="has-text-centered">
+                            <p class="heading">Warnings</p>
+                            <p class="title is-4 ${validation.summary.warningCount > 0 ? 'has-text-warning' : 'has-text-success'}">
+                                ${validation.summary.warningCount}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="has-text-centered">
+                            <p class="heading">Stack Blog</p>
+                            <p class="title is-4 ${getCompatibilityClass(validation.stackBlogCompatibility.overall)}">
+                                ${validation.stackBlogCompatibility.overall.toUpperCase()}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            ${validation.errors.length > 0 ? `
+                <div class="box">
+                    <h5 class="has-text-danger">
+                        <span class="icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </span>
+                        Errors (${validation.errors.length})
+                    </h5>
+                    ${validation.errors.map(error => `
+                        <div class="notification is-danger is-light">
+                            <strong>${error.code}</strong>: ${error.message}
+                            ${error.file ? `<br><small>File: ${error.file}</small>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
+            
+            ${validation.warnings.length > 0 ? `
+                <div class="box">
+                    <h5 class="has-text-warning">
+                        <span class="icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </span>
+                        Warnings (${validation.warnings.length})
+                    </h5>
+                    ${validation.warnings.slice(0, 10).map(warning => `
+                        <div class="notification is-warning is-light">
+                            <strong>${warning.code}</strong>: ${warning.message}
+                            ${warning.file ? `<br><small>File: ${warning.file}</small>` : ''}
+                        </div>
+                    `).join('')}
+                    ${validation.warnings.length > 10 ? `<p class="has-text-grey">... and ${validation.warnings.length - 10} more</p>` : ''}
+                </div>
+            ` : ''}
+            
+            <div class="box">
+                <h5>Stack Blog Compatibility</h5>
+                <div class="content">
+                    <ul>
+                        <li>Index Template: ${validation.stackBlogCompatibility.hasIndexTemplate ? '✅' : '❌'}</li>
+                        <li>Post Template: ${validation.stackBlogCompatibility.hasPostTemplate ? '✅' : '❌'}</li>
+                        <li>Assets Directory: ${validation.stackBlogCompatibility.hasAssets ? '✅' : '❌'}</li>
+                        <li>Ghost Helpers: ${validation.stackBlogCompatibility.usesGhostHelpers ? '✅' : '❌'}</li>
+                        <li>Package.json: ${validation.stackBlogCompatibility.hasPackageJson ? '✅' : '❌'}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('theme-validation-modal').classList.add('is-active');
+}
+
+function showBatchValidationResults(validations) {
+    const summary = Object.entries(validations).map(([themeName, validation]) => {
+        const compat = validation.stackBlogCompatibility?.overall || 'unknown';
+        return `
+            <tr>
+                <td>${themeName}</td>
+                <td>
+                    <span class="tag ${validation.valid ? 'is-success' : 'is-danger'}">
+                        ${validation.valid ? 'Valid' : 'Invalid'}
+                    </span>
+                </td>
+                <td>
+                    <span class="tag ${getCompatibilityClass(compat)}">
+                        ${compat}
+                    </span>
+                </td>
+                <td>${validation.summary?.errorCount || 0}</td>
+                <td>${validation.summary?.warningCount || 0}</td>
+                <td>
+                    <button class="button is-small is-info" onclick="validateTheme('${themeName}')">
+                        Details
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    document.getElementById('validation-modal-title').textContent = 'All Themes Validation Summary';
+    
+    const modalBody = document.getElementById('validation-modal-body');
+    modalBody.innerHTML = `
+        <div class="content">
+            <table class="table is-fullwidth is-striped">
+                <thead>
+                    <tr>
+                        <th>Theme</th>
+                        <th>Status</th>
+                        <th>Compatibility</th>
+                        <th>Errors</th>
+                        <th>Warnings</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${summary}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    document.getElementById('theme-validation-modal').classList.add('is-active');
+}
+
+function getCompatibilityClass(level) {
+    switch (level) {
+        case 'excellent': return 'is-success';
+        case 'good': return 'is-info';
+        case 'fair': return 'is-warning';
+        case 'poor': return 'is-danger';
+        case 'incompatible': return 'is-dark';
+        default: return 'is-light';
+    }
+}
+
+function closeValidationModal() {
+    document.getElementById('theme-validation-modal').classList.remove('is-active');
+}
+
+function showUploadModal() {
+    document.getElementById('theme-upload-modal').classList.add('is-active');
+    
+    // Reset form
+    document.getElementById('theme-upload-form').reset();
+    document.querySelector('.file-name').textContent = 'No file selected';
+}
+
+function closeUploadModal() {
+    document.getElementById('theme-upload-modal').classList.remove('is-active');
+}
+
+async function uploadTheme() {
+    const form = document.getElementById('theme-upload-form');
+    const formData = new FormData(form);
+    
+    const fileInput = form.querySelector('input[type="file"]');
+    if (!fileInput.files[0]) {
+        showNotification('Please select a theme file', 'is-danger');
+        return;
+    }
+    
+    try {
+        showNotification('Uploading theme...', 'is-info');
+        
+        const response = await fetch('/admin/api/themes/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(`Theme "${result.theme}" uploaded successfully!`, 'is-success');
+            closeUploadModal();
+            await loadThemes();
+            
+            // Show validation results if available
+            if (result.validation) {
+                setTimeout(() => {
+                    showValidationResults(result.validation, result.theme);
+                }, 1000);
+            }
+        } else {
+            showNotification(result.error || 'Failed to upload theme', 'is-danger');
+        }
+        
+    } catch (error) {
+        console.error('Error uploading theme:', error);
+        showNotification('Error uploading theme', 'is-danger');
+    }
+}
+
+async function deleteTheme(themeName) {
+    if (!confirm(`Are you sure you want to delete the theme "${themeName}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        showNotification(`Deleting theme "${themeName}"...`, 'is-info');
+        
+        const response = await fetch(`/admin/api/themes/${themeName}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(`Theme "${themeName}" deleted successfully!`, 'is-success');
+            await loadThemes();
+        } else {
+            showNotification(result.error || 'Failed to delete theme', 'is-danger');
+        }
+        
+    } catch (error) {
+        console.error('Error deleting theme:', error);
+        showNotification('Error deleting theme', 'is-danger');
+    }
+}
+
+async function exportTheme(themeName) {
+    try {
+        showNotification(`Exporting theme "${themeName}"...`, 'is-info');
+        
+        const response = await fetch(`/admin/api/themes/${themeName}/export`);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${themeName}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showNotification(`Theme "${themeName}" exported successfully!`, 'is-success');
+        } else {
+            const result = await response.json();
+            showNotification(result.error || 'Failed to export theme', 'is-danger');
+        }
+        
+    } catch (error) {
+        console.error('Error exporting theme:', error);
+        showNotification('Error exporting theme', 'is-danger');
+    }
+}
+
 function showNotification(message, type = 'is-info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
@@ -397,6 +847,21 @@ function showNotification(message, type = 'is-info') {
         }
     }, 5000);
 }
+// File input handling
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('#theme-upload-form input[type="file"]');
+    const fileName = document.querySelector('#theme-upload-form .file-name');
+    
+    if (fileInput && fileName) {
+        fileInput.addEventListener('change', function() {
+            if (this.files[0]) {
+                fileName.textContent = this.files[0].name;
+            } else {
+                fileName.textContent = 'No file selected';
+            }
+        });
+    }
+});
 </script>
 
 <style>

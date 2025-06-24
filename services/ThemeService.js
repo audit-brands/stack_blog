@@ -3,12 +3,13 @@ const path = require('path');
 const exphbs = require('express-handlebars');
 
 class ThemeService {
-  constructor(app) {
+  constructor(app, templateCacheService = null) {
     this.app = app;
     this.themesPath = path.join(process.cwd(), 'themes');
     this.activeTheme = null;
     this.engine = 'nunjucks'; // default
     this.handlebarsEngine = null;
+    this.templateCacheService = templateCacheService;
     
     // Initialize themes directory
     this.initializeThemesDirectory();
@@ -344,6 +345,11 @@ class ThemeService {
         this.app.engine('hbs', this.handlebarsEngine.engine);
         this.app.set('view engine', 'hbs');
         this.app.set('views', themePath);
+        
+        // Preload theme templates if caching is enabled
+        if (this.templateCacheService) {
+          this.templateCacheService.preloadTheme(themePath, themeName);
+        }
       }
 
       console.log(`Active theme set to '${themeName}' using ${engine} engine`);
@@ -443,9 +449,19 @@ class ThemeService {
       const templatePath = path.join(this.getActiveThemePath(), `${templateName}.hbs`);
       
       try {
-        const template = await fs.readFile(templatePath, 'utf-8');
-        const compiled = this.handlebarsEngine.handlebars.compile(template);
-        return compiled(context);
+        if (this.templateCacheService) {
+          // Use cached compiled template
+          const compiled = await this.templateCacheService.getCompiledTemplate(
+            templatePath,
+            (content) => this.handlebarsEngine.handlebars.compile(content)
+          );
+          return compiled(context);
+        } else {
+          // Direct compilation without caching
+          const template = await fs.readFile(templatePath, 'utf-8');
+          const compiled = this.handlebarsEngine.handlebars.compile(template);
+          return compiled(context);
+        }
       } catch (error) {
         console.error('Error rendering Handlebars template:', error);
         throw error;
@@ -454,6 +470,32 @@ class ThemeService {
     
     // Fall back to default Nunjucks rendering
     throw new Error('Nunjucks rendering not implemented in ThemeService');
+  }
+
+  /**
+   * Set template cache service
+   */
+  setTemplateCacheService(templateCacheService) {
+    this.templateCacheService = templateCacheService;
+  }
+
+  /**
+   * Clear template cache for current theme
+   */
+  clearTemplateCache() {
+    if (this.templateCacheService && this.activeTheme) {
+      this.templateCacheService.invalidateTheme(this.activeTheme);
+    }
+  }
+
+  /**
+   * Get template cache statistics
+   */
+  getTemplateCacheStats() {
+    if (this.templateCacheService) {
+      return this.templateCacheService.getStats();
+    }
+    return null;
   }
 }
 
