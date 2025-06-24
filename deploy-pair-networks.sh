@@ -8,9 +8,10 @@ set -e  # Exit on any error
 echo "🚀 Starting Stack Blog MVP deployment to Pair Networks..."
 
 # Configuration
-REMOTE_USER="stackblog"
-REMOTE_HOST="cpeio.online"
-REMOTE_PATH="/home/stackblog/public_html/app"
+REMOTE_USER="certifiedhq"
+REMOTE_HOST="certifiedhq.com"  # Updated to correct domain
+REMOTE_PATH="/usr/www/users/certifiedhq/cpeio.online"  # Updated to absolute path
+SSH_KEY="~/.ssh/stackblog_pair_rsa"  # New Stack Blog SSH key
 LOCAL_PATH="."
 
 echo "📋 Deployment Configuration:"
@@ -73,19 +74,20 @@ echo "🌐 Deploying to Pair Networks server..."
 
 # Create remote directory if it doesn't exist
 echo "  📁 Creating remote directory structure..."
-ssh "$REMOTE_USER@$REMOTE_HOST" "mkdir -p $REMOTE_PATH"
+ssh -i "$SSH_KEY" "$REMOTE_USER@$REMOTE_HOST" "mkdir -p $REMOTE_PATH"
 
 # Upload files to server
 echo "  📤 Uploading files..."
 rsync -avz --progress \
     --delete \
+    -e "ssh -i $SSH_KEY" \
     "$DEPLOY_DIR/" \
     "$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH/"
 
 echo "🔧 Setting up production environment on server..."
 
 # Install dependencies and start application
-ssh "$REMOTE_USER@$REMOTE_HOST" << EOF
+ssh -i "$SSH_KEY" "$REMOTE_USER@$REMOTE_HOST" << EOF
     cd $REMOTE_PATH
     
     echo "📦 Installing production dependencies..."

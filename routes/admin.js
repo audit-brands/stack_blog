@@ -601,7 +601,7 @@ router.get('/setup', (req, res) => {
     return res.redirect('/admin/login');
   }
 
-  res.render('pages/setup.hbs', {
+  res.render('admin/pages/setup.hbs', {
     page: {
       metadata: {
         title: 'Admin Setup'
@@ -634,7 +634,7 @@ router.get('/pages', authService.requireAuth.bind(authService), csrfProtection, 
       search
     });
     
-    res.render('pages/pages.hbs', {
+    res.render('admin/pages/pages.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -679,7 +679,7 @@ router.get('/pages', authService.requireAuth.bind(authService), csrfProtection, 
 router.get('/pages/new', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   const user = authService.getAuthenticatedUser(req.session);
   
-  res.render('pages/page-edit.hbs', {
+  res.render('admin/pages/page-edit.hbs', {
     layout: 'admin',
     page: {
       metadata: {
@@ -724,7 +724,7 @@ router.get('/pages/:slug/edit', authService.requireAuth.bind(authService), csrfP
       });
     }
     
-    res.render('pages/page-edit.hbs', {
+    res.render('admin/pages/page-edit.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -895,7 +895,7 @@ router.get('/media', authService.requireAuth.bind(authService), csrfProtection, 
       type
     });
     
-    res.render('pages/media.hbs', {
+    res.render('admin/pages/media.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -1079,7 +1079,7 @@ router.get('/cache', authService.requireAuth.bind(authService), csrfProtection, 
   const stats = cacheService.getStats();
   const templateCacheStats = templateCacheService.getStats();
   
-  res.render('pages/cache.hbs', {
+  res.render('admin/pages/cache.hbs', {
     layout: 'admin',
     page: {
       metadata: {
@@ -1164,7 +1164,7 @@ router.get('/plugins', authService.requireAuth.bind(authService), csrfProtection
   const plugins = pluginService.getAllPlugins();
   const hooks = pluginService.getHooksInfo();
   
-  res.render('pages/plugins.hbs', {
+  res.render('admin/pages/plugins.hbs', {
     layout: 'admin',
     page: {
       metadata: {
@@ -1248,7 +1248,7 @@ router.get('/search', authService.requireAuth.bind(authService), csrfProtection,
   const user = authService.getAuthenticatedUser(req.session);
   const stats = searchService.getStats();
   
-  res.render('pages/search.hbs', {
+  res.render('admin/pages/search.hbs', {
     layout: 'admin',
     page: {
       metadata: {
@@ -1343,7 +1343,7 @@ router.get('/search/suggestions', authService.requireAuth.bind(authService), asy
 router.get('/themes', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   const user = authService.getAuthenticatedUser(req.session);
   
-  res.render('pages/themes.hbs', {
+  res.render('admin/pages/themes.hbs', {
     layout: 'admin',
     page: {
       metadata: {
@@ -1366,7 +1366,7 @@ router.get('/themes', authService.requireAuth.bind(authService), csrfProtection,
 router.get('/rss-analytics', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   const user = authService.getAuthenticatedUser(req.session);
   
-  res.render('pages/rss-analytics.hbs', {
+  res.render('admin/pages/rss-analytics.hbs', {
     layout: 'admin',
     page: {
       metadata: {
