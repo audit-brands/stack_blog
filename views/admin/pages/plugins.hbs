@@ -1,0 +1,294 @@
+<div class="content-header">
+    <div class="level">
+        <div class="level-left">
+            <h1>
+                <span class="icon">
+                    <i class="fas fa-plug"></i>
+                </span>
+                Plugin Management
+            </h1>
+        </div>
+        <div class="level-right">
+            <div class="field is-grouped">
+                <div class="control">
+                    <button class="button is-info" onclick="reloadPlugins()">
+                        <span class="icon">
+                            <i class="fas fa-sync"></i>
+                        </span>
+                        <span>Reload Plugins</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plugin Status Overview -->
+<div class="columns">
+    <div class="column is-4">
+        <div class="box has-text-centered">
+            <div class="heading">Active Plugins</div>
+            <div class="title is-3 has-text-success">{{plugins.length}}</div>
+            <div class="subtitle is-6">loaded</div>
+        </div>
+    </div>
+    <div class="column is-4">
+        <div class="box has-text-centered">
+            <div class="heading">Plugin Hooks</div>
+            <div class="title is-3 has-text-info">{{#if hooks}}{{hooks.length}}{{else}}0{{/if}}</div>
+            <div class="subtitle is-6">registered</div>
+        </div>
+    </div>
+    <div class="column is-4">
+        <div class="box has-text-centered">
+            <div class="heading">System Status</div>
+            <div class="title is-3 has-text-primary">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="subtitle is-6">operational</div>
+        </div>
+    </div>
+</div>
+
+<!-- Installed Plugins -->
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-puzzle-piece"></i>
+        </span>
+        Installed Plugins
+    </h2>
+
+    {{#if plugins}}
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+                <tr>
+                    <th>Plugin</th>
+                    <th>Version</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each plugins}}
+                <tr>
+                    <td>
+                        <strong>{{this.name}}</strong>
+                        {{#if this.author}}
+                        <br><small class="has-text-grey">by {{this.author}}</small>
+                        {{/if}}
+                    </td>
+                    <td>
+                        {{#if this.version}}
+                        <span class="tag is-light">v{{this.version}}</span>
+                        {{else}}
+                        <span class="tag is-light">Unknown</span>
+                        {{/if}}
+                    </td>
+                    <td>
+                        {{#if this.enabled}}
+                        <span class="tag is-success">
+                            <i class="fas fa-check"></i>
+                            Active
+                        </span>
+                        {{else}}
+                        <span class="tag is-warning">
+                            <i class="fas fa-pause"></i>
+                            Disabled
+                        </span>
+                        {{/if}}
+                    </td>
+                    <td>
+                        {{#if this.description}}
+                        {{this.description}}
+                        {{else}}
+                        <em class="has-text-grey">No description available</em>
+                        {{/if}}
+                    </td>
+                    <td>
+                        <div class="buttons">
+                            {{#if this.enabled}}
+                            <button class="button is-small is-warning" onclick="disablePlugin('{{this.name}}')">
+                                <i class="fas fa-pause"></i>
+                                Disable
+                            </button>
+                            {{else}}
+                            <button class="button is-small is-success" onclick="enablePlugin('{{this.name}}')">
+                                <i class="fas fa-play"></i>
+                                Enable
+                            </button>
+                            {{/if}}
+                            <button class="button is-small is-info" onclick="configurePlugin('{{this.name}}')">
+                                <i class="fas fa-cog"></i>
+                                Configure
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <div class="has-text-centered has-text-grey">
+        <p class="is-size-4">
+            <span class="icon is-large">
+                <i class="fas fa-puzzle-piece"></i>
+            </span>
+        </p>
+        <p class="is-size-5">No plugins installed</p>
+        <p>Install plugins in the <code>plugins/</code> directory to extend Stack Blog functionality.</p>
+    </div>
+    {{/if}}
+</div>
+
+<!-- Plugin Hooks -->
+{{#if hooks}}
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-link"></i>
+        </span>
+        Plugin Hooks
+    </h2>
+
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped">
+            <thead>
+                <tr>
+                    <th>Hook Name</th>
+                    <th>Registered Plugins</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each hooks}}
+                <tr>
+                    <td>
+                        <code>{{this.name}}</code>
+                    </td>
+                    <td>
+                        {{#if this.plugins}}
+                        {{#each this.plugins}}
+                        <span class="tag is-info is-small">{{this}}</span>
+                        {{/each}}
+                        {{else}}
+                        <span class="has-text-grey">None</span>
+                        {{/if}}
+                    </td>
+                    <td>
+                        {{#if this.description}}
+                        {{this.description}}
+                        {{else}}
+                        <em class="has-text-grey">No description</em>
+                        {{/if}}
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{/if}}
+
+<!-- Plugin Development -->
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-code"></i>
+        </span>
+        Plugin Development
+    </h2>
+
+    <div class="content">
+        <p>Extend Stack Blog functionality by creating custom plugins.</p>
+        
+        <div class="notification is-info is-light">
+            <h4><strong>Getting Started</strong></h4>
+            <ul>
+                <li>Create a new directory in <code>plugins/</code></li>
+                <li>Add a <code>package.json</code> with plugin metadata</li>
+                <li>Implement plugin hooks and functionality</li>
+                <li>Reload plugins to activate changes</li>
+            </ul>
+        </div>
+
+        <div class="buttons">
+            <a href="/admin/docs/plugins" class="button is-info">
+                <span class="icon">
+                    <i class="fas fa-book"></i>
+                </span>
+                <span>Plugin Documentation</span>
+            </a>
+            <button class="button is-success" onclick="createPlugin()">
+                <span class="icon">
+                    <i class="fas fa-plus"></i>
+                </span>
+                <span>Create New Plugin</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function reloadPlugins() {
+    if (confirm('Reload all plugins? This may temporarily affect site functionality.')) {
+        fetch('/admin/plugins/reload', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Plugins reloaded successfully!', 'success');
+                location.reload();
+            } else {
+                showNotification('Failed to reload plugins', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error reloading plugins', 'error');
+            console.error('Error:', error);
+        });
+    }
+}
+
+function enablePlugin(name) {
+    showNotification(`Enable plugin "${name}" functionality coming soon!`, 'info');
+}
+
+function disablePlugin(name) {
+    showNotification(`Disable plugin "${name}" functionality coming soon!`, 'info');
+}
+
+function configurePlugin(name) {
+    showNotification(`Configure plugin "${name}" functionality coming soon!`, 'info');
+}
+
+function createPlugin() {
+    showNotification('Create plugin functionality coming soon!', 'info');
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification is-${type} is-light`;
+    notification.innerHTML = `<button class="delete"></button><strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}`;
+    notification.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;max-width:400px;';
+    
+    notification.querySelector('.delete').addEventListener('click', () => {
+        notification.remove();
+    });
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
