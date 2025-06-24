@@ -80,12 +80,11 @@ const securityHeaders = helmet({
       styleSrc: [
         "'self'", 
         "'unsafe-inline'", // Allow inline styles for dynamic styling
-        "https://kit.fontawesome.com",
+        "https://cdnjs.cloudflare.com",
         "https://cdn.jsdelivr.net"
       ],
       scriptSrc: [
         "'self'",
-        "https://kit.fontawesome.com",
         "https://cdn.jsdelivr.net"
       ],
       imgSrc: [
@@ -96,7 +95,7 @@ const securityHeaders = helmet({
       ],
       fontSrc: [
         "'self'",
-        "https://kit.fontawesome.com",
+        "https://cdnjs.cloudflare.com",
         "https://fonts.gstatic.com",
         "data:"
       ],
@@ -122,7 +121,8 @@ const securityHeaders = helmet({
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
+    // Also allow 'null' origin which can occur in certain security contexts
+    if (!origin || origin === 'null') return callback(null, true);
     
     // In production, you should configure allowed origins
     const allowedOrigins = process.env.ALLOWED_ORIGINS 
@@ -307,16 +307,15 @@ const adminCSP = helmet.contentSecurityPolicy({
     styleSrc: [
       "'self'", 
       "'unsafe-inline'",
-      "https://kit.fontawesome.com"
+      "https://cdnjs.cloudflare.com"
     ],
     scriptSrc: [
-      "'self'",
-      "https://kit.fontawesome.com"
+      "'self'"
     ],
     imgSrc: ["'self'", "data:", "blob:"],
     fontSrc: [
       "'self'",
-      "https://kit.fontawesome.com",
+      "https://cdnjs.cloudflare.com",
       "data:"
     ],
     connectSrc: ["'self'"],
