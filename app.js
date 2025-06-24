@@ -104,6 +104,35 @@ app.use(cacheService.middleware({
 // Static file serving
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve theme assets with proper caching
+app.use('/themes', express.static(path.join(__dirname, 'themes'), {
+  maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+  etag: true,
+  lastModified: true,
+  index: false,
+  setHeaders: (res, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    
+    // Set proper content types
+    if (ext === '.css') {
+      res.setHeader('Content-Type', 'text/css; charset=UTF-8');
+    } else if (ext === '.js') {
+      res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+    } else if (ext === '.woff' || ext === '.woff2') {
+      res.setHeader('Content-Type', 'font/woff2');
+    } else if (ext === '.ttf') {
+      res.setHeader('Content-Type', 'font/ttf');
+    } else if (ext === '.eot') {
+      res.setHeader('Content-Type', 'application/vnd.ms-fontobject');
+    }
+    
+    // Add cache headers for production
+    if (process.env.NODE_ENV === 'production') {
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day
+    }
+  }
+}));
+
 // Serve media files from content directories with filtering
 app.use('/media', express.static(path.join(__dirname, 'content'), {
   index: false,
@@ -179,18 +208,23 @@ async function startServer() {
   try {
     await pluginService.init();
     
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Stack Blog server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Templates: ${templatePath}`);
       console.log(`Plugins loaded: ${pluginService.getAllPlugins().length}`);
     });
+    
+    return server;
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
 }
 
-startServer();
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 module.exports = app;
