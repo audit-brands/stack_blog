@@ -173,7 +173,9 @@ class GhostContextService {
       baseUrl = '',
       pathPrefix = '',
       config = {},
-      contextType = 'index' // index, post, page, tag, author
+      contextType = 'index', // index, post, page, tag, author
+      tag = null,
+      author = null
     } = options;
 
     // Base context
@@ -184,6 +186,11 @@ class GhostContextService {
     // Add posts if we have multiple pages
     if (pages && pages.length > 0) {
       context.posts = await this.pagesToPosts(pages, baseUrl);
+      
+      // Sort posts by published date (newest first) for index contexts
+      if (contextType === 'index' || contextType === 'tag' || contextType === 'author') {
+        context.posts.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+      }
     }
 
     // Add current post/page
@@ -193,19 +200,149 @@ class GhostContextService {
       context.page = post; // Some themes use 'page' instead of 'post'
     }
 
-    // Add pagination
+    // Add pagination with enhanced metadata
     const pagination = this.generatePagination(currentPage, totalPages, baseUrl, pathPrefix);
     if (pagination) {
       context.pagination = pagination;
+      
+      // Add page numbers array for pagination helpers
+      context.pagination.page_numbers = [];
+      for (let i = 1; i <= totalPages; i++) {
+        context.pagination.page_numbers.push({
+          page: i,
+          url: i === 1 ? `${baseUrl}${pathPrefix}/` : `${baseUrl}${pathPrefix}/page/${i}/`,
+          current: i === currentPage
+        });
+      }
     }
 
-    // Add context-specific variables
+    // Add context-specific variables and data
     context.context = [contextType];
     
+    // Add tag context for tag pages
+    if (contextType === 'tag' && tag) {
+      context.tag = {
+        id: this.generateId(tag),
+        name: tag,
+        slug: this.slugify(tag),
+        description: `Posts tagged with ${tag}`,
+        feature_image: null,
+        visibility: 'public',
+        url: `${baseUrl}/tag/${this.slugify(tag)}/`,
+        count: { posts: pages ? pages.length : 0 }
+      };
+    }
+
+    // Add author context for author pages
+    if (contextType === 'author' && author) {
+      context.author = {
+        id: this.generateId(author),
+        name: author,
+        slug: this.slugify(author),
+        bio: null,
+        website: null,
+        location: null,
+        facebook: null,
+        twitter: null,
+        profile_image: null,
+        cover_image: null,
+        url: `${baseUrl}/author/${this.slugify(author)}/`,
+        count: { posts: pages ? pages.length : 0 }
+      };
+    }
+
     // Add template helpers context
     context.canonical = page ? `${baseUrl}/${page.slug}` : baseUrl;
+    
+    // Add metadata for ghost_head helper
+    context.meta_title = this.generateMetaTitle(contextType, page, tag, author, config);
+    context.meta_description = this.generateMetaDescription(contextType, page, tag, author, config);
+    
+    // Add JSON-LD structured data
+    context.structured_data = this.generateStructuredData(context, contextType, baseUrl);
 
     return context;
+  }
+
+  /**
+   * Generate meta title for different context types
+   */
+  generateMetaTitle(contextType, page, tag, author, config) {
+    const siteTitle = config.title || 'Stack Blog';
+    
+    switch (contextType) {
+      case 'post':
+      case 'page':
+        return page?.metadata?.meta_title || page?.metadata?.title || siteTitle;
+      case 'tag':
+        return tag ? `${tag} - ${siteTitle}` : siteTitle;
+      case 'author':
+        return author ? `${author} - ${siteTitle}` : siteTitle;
+      default:
+        return siteTitle;
+    }
+  }
+
+  /**
+   * Generate meta description for different context types
+   */
+  generateMetaDescription(contextType, page, tag, author, config) {
+    const siteDescription = config.description || 'A flat-file CMS built with Node.js';
+    
+    switch (contextType) {
+      case 'post':
+      case 'page':
+        return page?.metadata?.meta_description || page?.metadata?.description || siteDescription;
+      case 'tag':
+        return tag ? `Posts tagged with ${tag}` : siteDescription;
+      case 'author':
+        return author ? `Posts by ${author}` : siteDescription;
+      default:
+        return siteDescription;
+    }
+  }
+
+  /**
+   * Generate JSON-LD structured data
+   */
+  generateStructuredData(context, contextType, baseUrl) {
+    const site = context['@site'];
+    
+    const baseStructuredData = {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: site.title,
+      description: site.description,
+      url: baseUrl,
+      publisher: {
+        '@type': 'Organization',
+        name: site.title,
+        url: baseUrl
+      }
+    };
+
+    if (contextType === 'post' && context.post) {
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: context.post.title,
+        description: context.post.excerpt,
+        url: context.post.url,
+        datePublished: context.post.published_at,
+        dateModified: context.post.updated_at,
+        author: {
+          '@type': 'Person',
+          name: context.post.authors[0]?.name
+        },
+        publisher: baseStructuredData.publisher,
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': context.post.url
+        }
+      };
+    }
+
+    return baseStructuredData;
   }
 
   /**
