@@ -1,0 +1,70 @@
+<div class="content-header">
+    <h1>
+        <span class="icon has-text-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+        </span>
+        {{page.metadata.title}}
+    </h1>
+</div>
+
+<div class="box">
+    <div class="notification is-danger">
+        <h4 class="title is-4">Something went wrong</h4>
+        
+        {{#if error}}
+        <div class="content">
+            {{#if error.message}}
+            <p><strong>Error:</strong> {{error.message}}</p>
+            {{/if}}
+            
+            {{#if error.stack}}
+            <details>
+                <summary>Technical Details</summary>
+                <pre><code>{{error.stack}}</code></pre>
+            </details>
+            {{/if}}
+        </div>
+        {{else}}
+        <p>An unexpected error occurred. Please try again or contact support if the problem persists.</p>
+        {{/if}}
+        
+        <div class="buttons">
+            <a href="/admin" class="button is-primary">
+                <span class="icon">
+                    <i class="fas fa-home"></i>
+                </span>
+                <span>Return to Dashboard</span>
+            </a>
+            <button class="button" onclick="window.history.back()">
+                <span class="icon">
+                    <i class="fas fa-arrow-left"></i>
+                </span>
+                <span>Go Back</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.content-header {
+    margin-bottom: 1.5rem;
+}
+
+pre {
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.875rem;
+}
+
+details {
+    margin-top: 1rem;
+}
+
+summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+</style>
