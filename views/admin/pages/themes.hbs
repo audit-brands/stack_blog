@@ -1,0 +1,606 @@
+<div class="content-header">
+    <div class="level">
+        <div class="level-left">
+            <h1>
+                <span class="icon">
+                    <i class="fas fa-palette"></i>
+                </span>
+                Theme Management
+            </h1>
+        </div>
+        <div class="level-right">
+            <label for="theme-upload" class="button is-primary">
+                <span class="icon">
+                    <i class="fas fa-upload"></i>
+                </span>
+                <span>Upload Theme</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Theme Upload Form -->
+<div class="box" id="upload-area">
+    <form 
+        id="theme-upload-form" 
+        method="post" 
+        action="/admin/api/themes/upload" 
+        enctype="multipart/form-data"
+        class="dropzone"
+    >
+        {{{csrf}}}
+        
+        <div class="field">
+            <div class="file is-large is-centered is-boxed has-name">
+                <label class="file-label">
+                    <input 
+                        class="file-input" 
+                        type="file" 
+                        name="theme" 
+                        id="theme-upload"
+                        accept=".zip"
+                    >
+                    <span class="file-cta">
+                        <span class="file-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </span>
+                        <span class="file-label">
+                            Choose theme ZIP file or drag & drop
+                        </span>
+                    </span>
+                    <span class="file-name" id="theme-file-name">
+                        No file selected
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        <div class="field is-grouped is-grouped-centered">
+            <div class="control">
+                <button type="submit" class="button is-primary is-large">
+                    <span class="icon">
+                        <i class="fas fa-upload"></i>
+                    </span>
+                    <span>Upload Theme</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="help has-text-centered">
+            Upload a Ghost-compatible theme as a ZIP file<br>
+            The theme will be validated and installed automatically
+        </div>
+    </form>
+</div>
+
+<!-- Current Theme -->
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-check-circle has-text-success"></i>
+        </span>
+        Active Theme
+    </h2>
+    
+    <div id="active-theme" class="theme-card is-active">
+        <div class="columns">
+            <div class="column is-3">
+                <figure class="image is-16by9">
+                    <img id="active-theme-preview" src="/themes/default/preview.png" alt="Theme Preview" 
+                         onerror="this.src='/public/images/no-preview.png'">
+                </figure>
+            </div>
+            <div class="column">
+                <div class="theme-info">
+                    <h3 class="title is-5" id="active-theme-name">Default Theme</h3>
+                    <p class="subtitle is-6" id="active-theme-version">Version: 1.0.0</p>
+                    <p id="active-theme-description">The default Stack Blog theme with clean, modern design.</p>
+                    
+                    <div class="theme-meta">
+                        <span class="tag is-success">
+                            <span class="icon">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            <span>Active</span>
+                        </span>
+                        <span class="tag is-info" id="active-theme-author">Stack Blog Team</span>
+                    </div>
+                    
+                    <div class="theme-actions" style="margin-top: 1rem;">
+                        <button class="button is-small is-info" onclick="previewTheme('default')">
+                            <span class="icon">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                            <span>Preview</span>
+                        </button>
+                        <button class="button is-small" onclick="customizeTheme('default')">
+                            <span class="icon">
+                                <i class="fas fa-cog"></i>
+                            </span>
+                            <span>Customize</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Available Themes -->
+<div class="box">
+    <div class="level">
+        <div class="level-left">
+            <h2 class="title is-4">
+                <span class="icon">
+                    <i class="fas fa-th-large"></i>
+                </span>
+                Available Themes
+            </h2>
+        </div>
+        <div class="level-right">
+            <div class="field is-grouped">
+                <div class="control">
+                    <button class="button is-info is-small" onclick="validateAllThemes()">
+                        <span class="icon">
+                            <i class="fas fa-check-double"></i>
+                        </span>
+                        <span>Validate All</span>
+                    </button>
+                </div>
+                <div class="control">
+                    <button class="button is-small" onclick="refreshThemes()">
+                        <span class="icon">
+                            <i class="fas fa-sync"></i>
+                        </span>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="themes-grid" class="themes-grid">
+        <!-- Themes will be loaded here via JavaScript -->
+        <div class="theme-card" data-theme="casper">
+            <div class="theme-preview">
+                <img src="/themes/casper/preview.png" alt="Casper Theme Preview" 
+                     onerror="this.src='/public/images/no-preview.png'">
+                <div class="theme-overlay">
+                    <div class="theme-actions">
+                        <button class="button is-small is-primary" onclick="activateTheme('casper')">
+                            <span class="icon">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            <span>Activate</span>
+                        </button>
+                        <button class="button is-small is-info" onclick="previewTheme('casper')">
+                            <span class="icon">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                            <span>Preview</span>
+                        </button>
+                        <button class="button is-small is-danger" onclick="deleteTheme('casper')">
+                            <span class="icon">
+                                <i class="fas fa-trash"></i>
+                            </span>
+                            <span>Delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-info">
+                <h4 class="theme-name">Casper</h4>
+                <p class="theme-version">v5.4.4</p>
+                <p class="theme-description">The default Ghost theme</p>
+                <div class="theme-meta">
+                    <span class="tag is-light is-small">Ghost Team</span>
+                    <span class="tag is-success is-small">
+                        <i class="fas fa-check"></i>
+                        Valid
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="theme-card" data-theme="liebling">
+            <div class="theme-preview">
+                <img src="/themes/liebling/preview.png" alt="Liebling Theme Preview" 
+                     onerror="this.src='/public/images/no-preview.png'">
+                <div class="theme-overlay">
+                    <div class="theme-actions">
+                        <button class="button is-small is-primary" onclick="activateTheme('liebling')">
+                            <span class="icon">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            <span>Activate</span>
+                        </button>
+                        <button class="button is-small is-info" onclick="previewTheme('liebling')">
+                            <span class="icon">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                            <span>Preview</span>
+                        </button>
+                        <button class="button is-small is-danger" onclick="deleteTheme('liebling')">
+                            <span class="icon">
+                                <i class="fas fa-trash"></i>
+                            </span>
+                            <span>Delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-info">
+                <h4 class="theme-name">Liebling</h4>
+                <p class="theme-version">v1.8.0</p>
+                <p class="theme-description">Beautiful magazine-style theme</p>
+                <div class="theme-meta">
+                    <span class="tag is-light is-small">Peter Amende</span>
+                    <span class="tag is-warning is-small">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Needs Update
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Theme Development -->
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-code"></i>
+        </span>
+        Theme Development
+    </h2>
+    
+    <div class="content">
+        <p>Create custom themes for Stack Blog using the Ghost theme format.</p>
+        
+        <div class="columns">
+            <div class="column">
+                <div class="notification is-info is-light">
+                    <h4><strong>Getting Started</strong></h4>
+                    <ul>
+                        <li>Use Ghost theme structure and Handlebars templates</li>
+                        <li>Include package.json with theme metadata</li>
+                        <li>Test with Ghost CLI or Stack Blog locally</li>
+                        <li>Package as ZIP file for upload</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="column">
+                <div class="notification is-success is-light">
+                    <h4><strong>Resources</strong></h4>
+                    <div class="buttons">
+                        <a href="https://ghost.org/docs/themes/" target="_blank" class="button is-small is-success">
+                            <span class="icon">
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                            <span>Ghost Theme Docs</span>
+                        </a>
+                        <a href="/admin/themes/example" class="button is-small is-info">
+                            <span class="icon">
+                                <i class="fas fa-download"></i>
+                            </span>
+                            <span>Download Example</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.themes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.theme-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 2px solid transparent;
+}
+
+.theme-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.theme-card.is-active {
+    border-color: #48c774;
+    box-shadow: 0 4px 8px rgba(72, 199, 116, 0.25);
+}
+
+.theme-preview {
+    position: relative;
+    height: 180px;
+    background: #f5f5f5;
+    overflow: hidden;
+}
+
+.theme-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.theme-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.theme-card:hover .theme-overlay {
+    opacity: 1;
+}
+
+.theme-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.theme-info {
+    padding: 1rem;
+}
+
+.theme-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #363636;
+}
+
+.theme-version {
+    font-size: 0.875rem;
+    color: #7a7a7a;
+    margin-bottom: 0.5rem;
+}
+
+.theme-description {
+    font-size: 0.875rem;
+    color: #4a4a4a;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.theme-meta {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.dropzone {
+    border: 2px dashed #dbdbdb;
+    border-radius: 6px;
+    padding: 2rem;
+    transition: border-color 0.2s;
+}
+
+.dropzone.dragover {
+    border-color: #3273dc;
+    background-color: #f0f8ff;
+}
+
+.content-header {
+    margin-bottom: 1.5rem;
+}
+</style>
+
+<script>
+// Theme upload handling
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('theme-upload');
+    const fileName = document.getElementById('theme-file-name');
+    const uploadForm = document.getElementById('theme-upload-form');
+    const uploadArea = document.getElementById('upload-area');
+
+    // File selection display
+    fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            fileName.textContent = file.name;
+        } else {
+            fileName.textContent = 'No file selected';
+        }
+    });
+
+    // Drag and drop for themes
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        uploadForm.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        uploadForm.classList.remove('dragover');
+    }
+
+    uploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+        }
+    }
+
+    // Load themes on page load
+    loadAvailableThemes();
+});
+
+// Theme management functions
+function activateTheme(themeName) {
+    if (confirm(`Are you sure you want to activate the "${themeName}" theme?`)) {
+        showLoader();
+        
+        fetch('/admin/api/themes/activate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+            },
+            body: JSON.stringify({ themeName: themeName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoader();
+            if (data.success) {
+                showNotification('Theme activated successfully!', 'success');
+                location.reload(); // Refresh to show new active theme
+            } else {
+                showNotification(data.error || 'Failed to activate theme', 'error');
+            }
+        })
+        .catch(error => {
+            hideLoader();
+            showNotification('Error activating theme', 'error');
+            console.error('Error:', error);
+        });
+    }
+}
+
+function previewTheme(themeName) {
+    // Open theme preview in new tab
+    window.open(`/?theme_preview=${themeName}`, '_blank');
+}
+
+function deleteTheme(themeName) {
+    if (confirm(`Are you sure you want to delete the "${themeName}" theme? This action cannot be undone.`)) {
+        showLoader();
+        
+        fetch(`/admin/api/themes/${themeName}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoader();
+            if (data.success) {
+                showNotification('Theme deleted successfully!', 'success');
+                loadAvailableThemes(); // Refresh themes list
+            } else {
+                showNotification(data.error || 'Failed to delete theme', 'error');
+            }
+        })
+        .catch(error => {
+            hideLoader();
+            showNotification('Error deleting theme', 'error');
+            console.error('Error:', error);
+        });
+    }
+}
+
+function validateAllThemes() {
+    showLoader();
+    
+    fetch('/admin/api/themes/validate-all', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoader();
+        if (data.success) {
+            showNotification(`Validation complete: ${data.valid} valid, ${data.invalid} invalid themes`, 'info');
+            loadAvailableThemes(); // Refresh to show validation results
+        } else {
+            showNotification('Validation failed', 'error');
+        }
+    })
+    .catch(error => {
+        hideLoader();
+        showNotification('Error during validation', 'error');
+        console.error('Error:', error);
+    });
+}
+
+function refreshThemes() {
+    loadAvailableThemes();
+}
+
+function customizeTheme(themeName) {
+    showNotification('Theme customization coming soon!', 'info');
+}
+
+function loadAvailableThemes() {
+    // This would typically load from an API endpoint
+    // For now, showing static examples
+    console.log('Loading available themes...');
+}
+
+// Utility functions
+function showLoader() {
+    // Add a loader overlay
+    const loader = document.createElement('div');
+    loader.id = 'theme-loader';
+    loader.innerHTML = '<div class="has-text-centered"><div class="button is-loading is-large is-static">Loading</div></div>';
+    loader.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    document.body.appendChild(loader);
+}
+
+function hideLoader() {
+    const loader = document.getElementById('theme-loader');
+    if (loader) {
+        loader.remove();
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification is-${type} is-light`;
+    notification.innerHTML = `<button class="delete"></button><strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}`;
+    notification.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;max-width:400px;';
+    
+    // Add delete functionality
+    notification.querySelector('.delete').addEventListener('click', () => {
+        notification.remove();
+    });
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>

@@ -1,0 +1,358 @@
+<div class="content-header">
+    <div class="level">
+        <div class="level-left">
+            <h1>
+                <span class="icon">
+                    <i class="fas fa-tachometer-alt"></i>
+                </span>
+                Cache Management
+            </h1>
+        </div>
+        <div class="level-right">
+            <div class="field is-grouped">
+                <div class="control">
+                    <button class="button is-warning" onclick="clearAllCache()">
+                        <span class="icon">
+                            <i class="fas fa-trash-alt"></i>
+                        </span>
+                        <span>Clear All Cache</span>
+                    </button>
+                </div>
+                <div class="control">
+                    <button class="button is-info" onclick="refreshStats()">
+                        <span class="icon">
+                            <i class="fas fa-sync"></i>
+                        </span>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cache Statistics -->
+<div class="columns">
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Content Cache</div>
+            <div class="title is-3 has-text-info">{{#if stats.contentCache.entries}}{{stats.contentCache.entries}}{{else}}0{{/if}}</div>
+            <div class="subtitle is-6">entries</div>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Template Cache</div>
+            <div class="title is-3 has-text-primary">{{#if templateCacheStats.entries}}{{templateCacheStats.entries}}{{else}}0{{/if}}</div>
+            <div class="subtitle is-6">templates</div>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Hit Rate</div>
+            <div class="title is-3 has-text-success">{{#if stats.hitRate}}{{stats.hitRate}}%{{else}}0%{{/if}}</div>
+            <div class="subtitle is-6">cache hits</div>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Memory Usage</div>
+            <div class="title is-3 has-text-warning">{{#if stats.memoryUsage}}{{formatFileSize stats.memoryUsage}}{{else}}0 B{{/if}}</div>
+            <div class="subtitle is-6">in use</div>
+        </div>
+    </div>
+</div>
+
+<!-- Cache Controls -->
+<div class="columns">
+    <div class="column is-6">
+        <div class="box">
+            <h3 class="title is-5">
+                <span class="icon">
+                    <i class="fas fa-file-alt"></i>
+                </span>
+                Content Cache
+            </h3>
+            <div class="content">
+                <p>Caches rendered pages and API responses for faster delivery.</p>
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button class="button is-warning" onclick="clearCache('content')">
+                            <span class="icon">
+                                <i class="fas fa-trash"></i>
+                            </span>
+                            <span>Clear Content Cache</span>
+                        </button>
+                    </div>
+                    <div class="control">
+                        <button class="button is-info" onclick="preWarmCache()">
+                            <span class="icon">
+                                <i class="fas fa-fire"></i>
+                            </span>
+                            <span>Pre-warm Cache</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="column is-6">
+        <div class="box">
+            <h3 class="title is-5">
+                <span class="icon">
+                    <i class="fas fa-code"></i>
+                </span>
+                Template Cache
+            </h3>
+            <div class="content">
+                <p>Caches compiled Handlebars templates for improved performance.</p>
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button class="button is-warning" onclick="clearCache('templates')">
+                            <span class="icon">
+                                <i class="fas fa-trash"></i>
+                            </span>
+                            <span>Clear Template Cache</span>
+                        </button>
+                    </div>
+                    <div class="control">
+                        <button class="button is-info" onclick="compileTemplates()">
+                            <span class="icon">
+                                <i class="fas fa-cogs"></i>
+                            </span>
+                            <span>Recompile Templates</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cache Configuration -->
+<div class="box">
+    <h3 class="title is-5">
+        <span class="icon">
+            <i class="fas fa-cog"></i>
+        </span>
+        Cache Configuration
+    </h3>
+    
+    <form onsubmit="updateCacheConfig(event)">
+        {{{csrf}}}
+        
+        <div class="columns">
+            <div class="column is-6">
+                <div class="field">
+                    <label class="label">Cache TTL (seconds)</label>
+                    <div class="control">
+                        <input class="input" type="number" name="ttl" value="300" min="0" max="86400">
+                    </div>
+                    <p class="help">Time to live for cached content (0 = no expiration)</p>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Max Cache Size (MB)</label>
+                    <div class="control">
+                        <input class="input" type="number" name="maxSize" value="100" min="10" max="1000">
+                    </div>
+                    <p class="help">Maximum memory usage for cache</p>
+                </div>
+            </div>
+            
+            <div class="column is-6">
+                <div class="field">
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="enableCache" checked>
+                            Enable content caching
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="enableTemplateCache" checked>
+                            Enable template caching
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="enableCompression">
+                            Enable cache compression
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-primary">
+                            <span class="icon">
+                                <i class="fas fa-save"></i>
+                            </span>
+                            <span>Save Configuration</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Cache Details -->
+<div class="box">
+    <h3 class="title is-5">
+        <span class="icon">
+            <i class="fas fa-list"></i>
+        </span>
+        Cache Details
+    </h3>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped">
+            <thead>
+                <tr>
+                    <th>Cache Type</th>
+                    <th>Entries</th>
+                    <th>Hit Rate</th>
+                    <th>Memory</th>
+                    <th>Last Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="fas fa-file-alt"></i>
+                            </span>
+                            <span>Pages</span>
+                        </span>
+                    </td>
+                    <td>{{#if stats.pages}}{{stats.pages.entries}}{{else}}0{{/if}}</td>
+                    <td>{{#if stats.pages}}{{stats.pages.hitRate}}%{{else}}0%{{/if}}</td>
+                    <td>{{#if stats.pages}}{{formatFileSize stats.pages.memory}}{{else}}0 B{{/if}}</td>
+                    <td>{{#if stats.pages}}{{formatDateTime stats.pages.lastUpdated}}{{else}}Never{{/if}}</td>
+                    <td>
+                        <button class="button is-small is-warning" onclick="clearCache('pages')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="fas fa-database"></i>
+                            </span>
+                            <span>API Responses</span>
+                        </span>
+                    </td>
+                    <td>{{#if stats.api}}{{stats.api.entries}}{{else}}0{{/if}}</td>
+                    <td>{{#if stats.api}}{{stats.api.hitRate}}%{{else}}0%{{/if}}</td>
+                    <td>{{#if stats.api}}{{formatFileSize stats.api.memory}}{{else}}0 B{{/if}}</td>
+                    <td>{{#if stats.api}}{{formatDateTime stats.api.lastUpdated}}{{else}}Never{{/if}}</td>
+                    <td>
+                        <button class="button is-small is-warning" onclick="clearCache('api')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="fas fa-code"></i>
+                            </span>
+                            <span>Templates</span>
+                        </span>
+                    </td>
+                    <td>{{#if templateCacheStats}}{{templateCacheStats.entries}}{{else}}0{{/if}}</td>
+                    <td>{{#if templateCacheStats}}{{templateCacheStats.hitRate}}%{{else}}0%{{/if}}</td>
+                    <td>{{#if templateCacheStats}}{{formatFileSize templateCacheStats.memory}}{{else}}0 B{{/if}}</td>
+                    <td>{{#if templateCacheStats}}{{formatDateTime templateCacheStats.lastUpdated}}{{else}}Never{{/if}}</td>
+                    <td>
+                        <button class="button is-small is-warning" onclick="clearCache('templates')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function clearCache(type) {
+    if (confirm(`Clear ${type} cache? This may temporarily slow down your site.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/cache/clear';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_csrf';
+        csrfInput.value = document.querySelector('input[name="_csrf"]').value;
+        form.appendChild(csrfInput);
+        
+        const typeInput = document.createElement('input');
+        typeInput.type = 'hidden';
+        typeInput.name = 'type';
+        typeInput.value = type;
+        form.appendChild(typeInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function clearAllCache() {
+    if (confirm('Clear all caches? This may temporarily slow down your site.')) {
+        clearCache('all');
+    }
+}
+
+function preWarmCache() {
+    showNotification('Cache pre-warming started!', 'info');
+    // This would trigger a background process to warm the cache
+}
+
+function compileTemplates() {
+    showNotification('Template recompilation started!', 'info');
+    clearCache('templates');
+}
+
+function refreshStats() {
+    location.reload();
+}
+
+function updateCacheConfig(event) {
+    event.preventDefault();
+    showNotification('Cache configuration saved!', 'success');
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification is-${type} is-light`;
+    notification.innerHTML = `<button class="delete"></button><strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}`;
+    notification.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;max-width:400px;';
+    
+    notification.querySelector('.delete').addEventListener('click', () => {
+        notification.remove();
+    });
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>

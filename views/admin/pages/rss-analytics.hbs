@@ -1,0 +1,559 @@
+<div class="content-header">
+    <div class="level">
+        <div class="level-left">
+            <h1>
+                <span class="icon">
+                    <i class="fas fa-chart-line"></i>
+                </span>
+                RSS Analytics & Sponsors
+            </h1>
+        </div>
+        <div class="level-right">
+            <div class="field is-grouped">
+                <div class="control">
+                    <button class="button is-primary" onclick="exportAnalytics()">
+                        <span class="icon">
+                            <i class="fas fa-download"></i>
+                        </span>
+                        <span>Export Data</span>
+                    </button>
+                </div>
+                <div class="control">
+                    <button class="button is-info" onclick="refreshAnalytics()">
+                        <span class="icon">
+                            <i class="fas fa-sync"></i>
+                        </span>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Overview -->
+<div class="columns">
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">RSS Subscribers</div>
+            <div class="title is-3 has-text-primary" id="total-subscribers">1,247</div>
+            <div class="subtitle is-6 has-text-success">
+                <i class="fas fa-arrow-up"></i> +12% this month
+            </div>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Feed Downloads</div>
+            <div class="title is-3 has-text-info" id="feed-downloads">8,543</div>
+            <div class="subtitle is-6 has-text-success">
+                <i class="fas fa-arrow-up"></i> +8% this month
+            </div>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Sponsor Clicks</div>
+            <div class="title is-3 has-text-warning" id="sponsor-clicks">342</div>
+            <div class="subtitle is-6 has-text-success">
+                <i class="fas fa-arrow-up"></i> +23% this month
+            </div>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Revenue</div>
+            <div class="title is-3 has-text-success" id="revenue">$2,456</div>
+            <div class="subtitle is-6 has-text-success">
+                <i class="fas fa-arrow-up"></i> +15% this month
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="columns">
+    <div class="column is-8">
+        <div class="box">
+            <h3 class="title is-5">
+                <span class="icon">
+                    <i class="fas fa-chart-area"></i>
+                </span>
+                Subscriber Growth
+            </h3>
+            <canvas id="subscriber-chart" height="300"></canvas>
+        </div>
+    </div>
+    <div class="column is-4">
+        <div class="box">
+            <h3 class="title is-5">
+                <span class="icon">
+                    <i class="fas fa-chart-pie"></i>
+                </span>
+                Traffic Sources
+            </h3>
+            <canvas id="sources-chart" height="300"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Sponsor Management -->
+<div class="box">
+    <div class="level">
+        <div class="level-left">
+            <h2 class="title is-4">
+                <span class="icon">
+                    <i class="fas fa-handshake"></i>
+                </span>
+                Sponsor Management
+            </h2>
+        </div>
+        <div class="level-right">
+            <button class="button is-primary" onclick="addSponsor()">
+                <span class="icon">
+                    <i class="fas fa-plus"></i>
+                </span>
+                <span>Add Sponsor</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+                <tr>
+                    <th>Sponsor</th>
+                    <th>Campaign</th>
+                    <th>Status</th>
+                    <th>Clicks</th>
+                    <th>Impressions</th>
+                    <th>CTR</th>
+                    <th>Revenue</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="sponsors-table">
+                <tr>
+                    <td>
+                        <div class="media">
+                            <div class="media-left">
+                                <figure class="image is-32x32">
+                                    <img src="/public/images/sponsor-logos/techcorp.png" alt="TechCorp" class="is-rounded">
+                                </figure>
+                            </div>
+                            <div class="media-content">
+                                <strong>TechCorp</strong><br>
+                                <small>techcorp.com</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <strong>Q1 Tech Solutions</strong><br>
+                        <small>RSS Sponsorship</small>
+                    </td>
+                    <td>
+                        <span class="tag is-success">
+                            <i class="fas fa-check"></i>
+                            Active
+                        </span>
+                    </td>
+                    <td>156</td>
+                    <td>4,230</td>
+                    <td>3.69%</td>
+                    <td>$1,200</td>
+                    <td>
+                        <div class="buttons">
+                            <button class="button is-small is-info" onclick="editSponsor('techcorp')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="button is-small is-warning" onclick="pauseSponsor('techcorp')">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button class="button is-small is-danger" onclick="deleteSponsor('techcorp')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="media">
+                            <div class="media-left">
+                                <figure class="image is-32x32">
+                                    <img src="/public/images/sponsor-logos/designco.png" alt="DesignCo" class="is-rounded">
+                                </figure>
+                            </div>
+                            <div class="media-content">
+                                <strong>DesignCo</strong><br>
+                                <small>designco.io</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <strong>Creative Tools Promo</strong><br>
+                        <small>RSS + Email</small>
+                    </td>
+                    <td>
+                        <span class="tag is-warning">
+                            <i class="fas fa-pause"></i>
+                            Paused
+                        </span>
+                    </td>
+                    <td>89</td>
+                    <td>2,156</td>
+                    <td>4.13%</td>
+                    <td>$800</td>
+                    <td>
+                        <div class="buttons">
+                            <button class="button is-small is-info" onclick="editSponsor('designco')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="button is-small is-success" onclick="resumeSponsor('designco')">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="button is-small is-danger" onclick="deleteSponsor('designco')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="media">
+                            <div class="media-left">
+                                <figure class="image is-32x32">
+                                    <img src="/public/images/sponsor-logos/cloudserv.png" alt="CloudServ" class="is-rounded">
+                                </figure>
+                            </div>
+                            <div class="media-content">
+                                <strong>CloudServ</strong><br>
+                                <small>cloudserv.net</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <strong>Hosting Solutions</strong><br>
+                        <small>RSS Featured</small>
+                    </td>
+                    <td>
+                        <span class="tag is-success">
+                            <i class="fas fa-check"></i>
+                            Active
+                        </span>
+                    </td>
+                    <td>97</td>
+                    <td>1,887</td>
+                    <td>5.14%</td>
+                    <td>$456</td>
+                    <td>
+                        <div class="buttons">
+                            <button class="button is-small is-info" onclick="editSponsor('cloudserv')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="button is-small is-warning" onclick="pauseSponsor('cloudserv')">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button class="button is-small is-danger" onclick="deleteSponsor('cloudserv')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- RSS Feed Configuration -->
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-rss"></i>
+        </span>
+        RSS Configuration
+    </h2>
+
+    <div class="columns">
+        <div class="column is-6">
+            <div class="field">
+                <label class="label">Feed Title</label>
+                <div class="control">
+                    <input class="input" type="text" value="Stack Blog - Latest Posts" id="feed-title">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Feed Description</label>
+                <div class="control">
+                    <textarea class="textarea" rows="3" id="feed-description">Stay updated with the latest from Stack Blog</textarea>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Posts per Feed</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="posts-per-feed">
+                            <option value="10">10 posts</option>
+                            <option value="20" selected>20 posts</option>
+                            <option value="50">50 posts</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="column is-6">
+            <div class="field">
+                <label class="label">Sponsor Placement</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="sponsor-placement">
+                            <option value="top">Top of feed</option>
+                            <option value="middle" selected>After 5th post</option>
+                            <option value="bottom">Bottom of feed</option>
+                            <option value="multiple">Multiple positions</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="control">
+                    <label class="checkbox">
+                        <input type="checkbox" id="include-analytics" checked>
+                        Include analytics tracking
+                    </label>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="control">
+                    <label class="checkbox">
+                        <input type="checkbox" id="include-sponsors" checked>
+                        Include sponsor content
+                    </label>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="control">
+                    <button class="button is-primary" onclick="updateRSSConfig()">
+                        <span class="icon">
+                            <i class="fas fa-save"></i>
+                        </span>
+                        <span>Save Configuration</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RSS Feed URLs -->
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-link"></i>
+        </span>
+        RSS Feed URLs
+    </h2>
+
+    <div class="columns">
+        <div class="column">
+            <div class="field">
+                <label class="label">Main RSS Feed</label>
+                <div class="field has-addons">
+                    <div class="control is-expanded">
+                        <input class="input" type="text" value="https://cpeio.online/rss.xml" readonly>
+                    </div>
+                    <div class="control">
+                        <button class="button is-info" onclick="copyToClipboard('https://cpeio.online/rss.xml')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">Analytics Feed</label>
+                <div class="field has-addons">
+                    <div class="control is-expanded">
+                        <input class="input" type="text" value="https://cpeio.online/rss/analytics.xml" readonly>
+                    </div>
+                    <div class="control">
+                        <button class="button is-info" onclick="copyToClipboard('https://cpeio.online/rss/analytics.xml')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.content-header {
+    margin-bottom: 1.5rem;
+}
+
+.box .heading {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #7a7a7a;
+    margin-bottom: 0.5rem;
+}
+
+#subscriber-chart, #sources-chart {
+    max-height: 300px;
+}
+
+.media .image img {
+    border-radius: 50%;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+}
+
+.buttons {
+    flex-wrap: nowrap;
+}
+
+.buttons .button {
+    margin-bottom: 0;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    loadAnalyticsData();
+});
+
+function initializeCharts() {
+    // Subscriber Growth Chart
+    const subscriberCtx = document.getElementById('subscriber-chart').getContext('2d');
+    new Chart(subscriberCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Subscribers',
+                data: [820, 932, 1021, 1134, 1189, 1247],
+                borderColor: '#3273dc',
+                backgroundColor: 'rgba(50, 115, 220, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Traffic Sources Chart
+    const sourcesCtx = document.getElementById('sources-chart').getContext('2d');
+    new Chart(sourcesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Direct', 'Social Media', 'Email', 'Search', 'Referral'],
+            datasets: [{
+                data: [45, 25, 15, 10, 5],
+                backgroundColor: [
+                    '#3273dc',
+                    '#48c774',
+                    '#ffdd57',
+                    '#ff3860',
+                    '#00d1b2'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+function loadAnalyticsData() {
+    // This would typically load real data from an API
+    console.log('Loading analytics data...');
+}
+
+function exportAnalytics() {
+    showNotification('Analytics export started! You will receive an email when ready.', 'info');
+}
+
+function refreshAnalytics() {
+    showNotification('Analytics refreshed!', 'success');
+    loadAnalyticsData();
+}
+
+function addSponsor() {
+    showNotification('Add sponsor functionality coming soon!', 'info');
+}
+
+function editSponsor(sponsorId) {
+    showNotification(`Edit sponsor ${sponsorId} functionality coming soon!`, 'info');
+}
+
+function pauseSponsor(sponsorId) {
+    if (confirm(`Pause sponsor ${sponsorId}?`)) {
+        showNotification(`Sponsor ${sponsorId} paused`, 'warning');
+    }
+}
+
+function resumeSponsor(sponsorId) {
+    if (confirm(`Resume sponsor ${sponsorId}?`)) {
+        showNotification(`Sponsor ${sponsorId} resumed`, 'success');
+    }
+}
+
+function deleteSponsor(sponsorId) {
+    if (confirm(`Delete sponsor ${sponsorId}? This action cannot be undone.`)) {
+        showNotification(`Sponsor ${sponsorId} deleted`, 'info');
+    }
+}
+
+function updateRSSConfig() {
+    showNotification('RSS configuration saved!', 'success');
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        showNotification('URL copied to clipboard!', 'success');
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+        showNotification('Failed to copy URL', 'error');
+    });
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification is-${type} is-light`;
+    notification.innerHTML = `<button class="delete"></button><strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}`;
+    notification.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;max-width:400px;';
+    
+    notification.querySelector('.delete').addEventListener('click', () => {
+        notification.remove();
+    });
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
