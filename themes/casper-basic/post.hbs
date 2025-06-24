@@ -1,0 +1,52 @@
+{{!< default}}
+
+<main id="site-main" class="site-main outer">
+    <div class="inner">
+        <article class="post-full {{post_class}}">
+            <header class="post-full-header">
+                <h1 class="post-full-title">{{title}}</h1>
+                
+                <div class="post-full-meta">
+                    <time class="post-full-meta-date" datetime="{{date format='YYYY-MM-DD'}}">
+                        {{date format='DD MMMM YYYY'}}
+                    </time>
+                    
+                    {{#if authors}}
+                    <span class="post-full-meta-length"> by </span>
+                    <div class="post-full-meta-author">
+                        {{#foreach authors}}
+                        <a href="/author/{{slug}}/">{{name}}</a>{{#unless @last}}, {{/unless}}
+                        {{/foreach}}
+                    </div>
+                    {{/if}}
+                    
+                    {{#if reading_time}}
+                    <span class="post-full-meta-length"> • {{reading_time}} min read</span>
+                    {{/if}}
+                </div>
+            </header>
+
+            {{#if feature_image}}
+            <figure class="post-full-image">
+                <img src="{{feature_image}}" alt="{{title}}">
+            </figure>
+            {{/if}}
+
+            <section class="post-full-content">
+                <div class="post-content">
+                    {{content}}
+                </div>
+            </section>
+
+            {{#if tags}}
+            <footer class="post-full-footer">
+                <section class="post-full-tags">
+                    {{#foreach tags}}
+                    <a href="/tag/{{slug}}/" class="post-tag">#{{name}}</a>
+                    {{/foreach}}
+                </section>
+            </footer>
+            {{/if}}
+        </article>
+    </div>
+</main>

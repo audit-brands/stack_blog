@@ -1,0 +1,55 @@
+{{!< default}}
+
+{{#if posts}}
+<main id="site-main" class="site-main outer">
+    <div class="inner posts">
+        <div class="post-feed">
+            {{#foreach posts}}
+            <article class="post-card {{#unless featured}}{{else}}post-card-featured{{/unless}}">
+                <header class="post-card-header">
+                    <h2 class="post-card-title">
+                        <a href="{{url}}">{{title}}</a>
+                    </h2>
+                </header>
+                
+                {{#if excerpt}}
+                <section class="post-card-excerpt">
+                    <p>{{excerpt}}</p>
+                </section>
+                {{/if}}
+                
+                <footer class="post-card-meta">
+                    <span class="post-card-author">
+                        {{#if authors}}
+                            {{#foreach authors}}
+                                {{name}}{{#unless @last}}, {{/unless}}
+                            {{/foreach}}
+                        {{else}}
+                            Admin
+                        {{/if}}
+                    </span>
+                    <span class="post-card-date">
+                        <time datetime="{{date format='YYYY-MM-DD'}}">{{date format='DD MMM YYYY'}}</time>
+                    </span>
+                </footer>
+            </article>
+            {{/foreach}}
+        </div>
+    </div>
+    
+    {{> "pagination"}}
+</main>
+{{else}}
+<main id="site-main" class="site-main outer">
+    <div class="inner">
+        <div class="post-feed">
+            <article class="post-card">
+                <div class="post-card-content">
+                    <h2>Welcome to Stack Blog</h2>
+                    <p>This is your new blog with Ghost theme support. Create some content to get started!</p>
+                </div>
+            </article>
+        </div>
+    </div>
+</main>
+{{/if}}

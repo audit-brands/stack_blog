@@ -1,0 +1,24 @@
+{
+  "name": "casper-basic",
+  "description": "A basic Ghost theme compatible with Stack Blog CMS",
+  "version": "1.0.0",
+  "engines": {
+    "ghost": ">=4.0.0",
+    "ghost-api": "v4"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Stack Blog",
+    "email": "hello@stackblog.com"
+  },
+  "keywords": [
+    "ghost",
+    "theme",
+    "ghost-theme",
+    "stack-blog"
+  ],
+  "config": {
+    "posts_per_page": 5,
+    "card": true
+  }
+}
