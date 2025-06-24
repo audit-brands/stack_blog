@@ -75,6 +75,10 @@ nunjucksEnv.addFilter('date', (str, format = 'F j, Y') => {
   });
 });
 
+nunjucksEnv.addFilter('startsWith', (str, prefix) => {
+  return str && typeof str === 'string' && str.startsWith(prefix);
+});
+
 // Configure Handlebars for admin panel
 const hbs = exphbs.create({
   extname: '.hbs',
