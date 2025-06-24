@@ -1073,7 +1073,8 @@ router.get('/cache', authService.requireAuth.bind(authService), csrfProtection, 
   const stats = cacheService.getStats();
   const templateCacheStats = templateCacheService.getStats();
   
-  res.render('admin/cache', {
+  res.render('pages/cache', {
+    layout: 'admin',
     page: {
       metadata: {
         title: 'Cache Management'
@@ -1240,7 +1241,8 @@ router.get('/search', authService.requireAuth.bind(authService), csrfProtection,
   const user = authService.getAuthenticatedUser(req.session);
   const stats = searchService.getStats();
   
-  res.render('admin/search', {
+  res.render('pages/search', {
+    layout: 'admin',
     page: {
       metadata: {
         title: 'Search Management'
@@ -1334,7 +1336,8 @@ router.get('/search/suggestions', authService.requireAuth.bind(authService), asy
 router.get('/themes', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   const user = authService.getAuthenticatedUser(req.session);
   
-  res.render('admin/themes', {
+  res.render('pages/themes', {
+    layout: 'admin',
     page: {
       metadata: {
         title: 'Theme Management'
@@ -1356,7 +1359,8 @@ router.get('/themes', authService.requireAuth.bind(authService), csrfProtection,
 router.get('/rss-analytics', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   const user = authService.getAuthenticatedUser(req.session);
   
-  res.render('admin/rss-analytics', {
+  res.render('pages/rss-analytics', {
+    layout: 'admin',
     page: {
       metadata: {
         title: 'RSS Analytics & Sponsors'
