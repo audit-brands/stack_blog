@@ -1,0 +1,370 @@
+<div class="content-header">
+    <div class="level">
+        <div class="level-left">
+            <h1>
+                <span class="icon">
+                    <i class="fas fa-search"></i>
+                </span>
+                Search Management
+            </h1>
+        </div>
+        <div class="level-right">
+            <div class="field is-grouped">
+                <div class="control">
+                    <button class="button is-info" onclick="rebuildIndex()">
+                        <span class="icon">
+                            <i class="fas fa-sync"></i>
+                        </span>
+                        <span>Rebuild Index</span>
+                    </button>
+                </div>
+                <div class="control">
+                    <button class="button is-warning" onclick="clearIndex()">
+                        <span class="icon">
+                            <i class="fas fa-trash"></i>
+                        </span>
+                        <span>Clear Index</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Statistics -->
+<div class="columns">
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Indexed Documents</div>
+            <div class="title is-3 has-text-primary">{{#if stats.totalDocuments}}{{stats.totalDocuments}}{{else}}0{{/if}}</div>
+            <div class="subtitle is-6">documents</div>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Search Terms</div>
+            <div class="title is-3 has-text-info">{{#if stats.totalTerms}}{{stats.totalTerms}}{{else}}0{{/if}}</div>
+            <div class="subtitle is-6">indexed</div>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Index Size</div>
+            <div class="title is-3 has-text-success">{{#if stats.indexSize}}{{formatFileSize stats.indexSize}}{{else}}0 B{{/if}}</div>
+            <div class="subtitle is-6">storage</div>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <div class="heading">Last Updated</div>
+            <div class="title is-3 has-text-warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="subtitle is-6">{{#if stats.lastUpdated}}{{formatDate stats.lastUpdated}}{{else}}Never{{/if}}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Configuration -->
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-cog"></i>
+        </span>
+        Search Configuration
+    </h2>
+
+    <form onsubmit="updateSearchConfig(event)">
+        {{{csrf}}}
+        
+        <div class="columns">
+            <div class="column is-6">
+                <div class="field">
+                    <label class="label">Search Engine</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="engine">
+                                <option value="simple" selected>Simple Text Search</option>
+                                <option value="fuzzy">Fuzzy Search</option>
+                                <option value="advanced">Advanced Search</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="help">Choose the search algorithm to use</p>
+                </div>
+
+                <div class="field">
+                    <label class="label">Results Per Page</label>
+                    <div class="control">
+                        <input class="input" type="number" name="resultsPerPage" value="10" min="5" max="50">
+                    </div>
+                    <p class="help">Number of search results to show per page</p>
+                </div>
+
+                <div class="field">
+                    <label class="label">Minimum Query Length</label>
+                    <div class="control">
+                        <input class="input" type="number" name="minQueryLength" value="2" min="1" max="10">
+                    </div>
+                    <p class="help">Minimum characters required for search</p>
+                </div>
+            </div>
+            
+            <div class="column is-6">
+                <div class="field">
+                    <label class="label">Index Options</label>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="indexContent" checked>
+                            Index page content
+                        </label>
+                    </div>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="indexTitles" checked>
+                            Index page titles
+                        </label>
+                    </div>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="indexTags" checked>
+                            Index page tags
+                        </label>
+                    </div>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="indexMetadata">
+                            Index metadata fields
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-primary">
+                            <span class="icon">
+                                <i class="fas fa-save"></i>
+                            </span>
+                            <span>Save Configuration</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Search Test -->
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-vial"></i>
+        </span>
+        Search Test
+    </h2>
+
+    <div class="field has-addons">
+        <div class="control is-expanded">
+            <input class="input" type="text" id="testQuery" placeholder="Enter search query to test...">
+        </div>
+        <div class="control">
+            <button class="button is-info" onclick="testSearch()">
+                <span class="icon">
+                    <i class="fas fa-search"></i>
+                </span>
+                <span>Test Search</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="searchResults" style="margin-top: 1rem;"></div>
+</div>
+
+<!-- Index Status -->
+<div class="box">
+    <h2 class="title is-4">
+        <span class="icon">
+            <i class="fas fa-list"></i>
+        </span>
+        Index Status
+    </h2>
+
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped">
+            <thead>
+                <tr>
+                    <th>Document Type</th>
+                    <th>Count</th>
+                    <th>Last Indexed</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="fas fa-file-alt"></i>
+                            </span>
+                            <span>Pages</span>
+                        </span>
+                    </td>
+                    <td>{{#if stats.pages}}{{stats.pages}}{{else}}0{{/if}}</td>
+                    <td>{{#if stats.pagesLastIndexed}}{{formatDateTime stats.pagesLastIndexed}}{{else}}Never{{/if}}</td>
+                    <td>
+                        <span class="tag is-success">
+                            <i class="fas fa-check"></i>
+                            Current
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="fas fa-blog"></i>
+                            </span>
+                            <span>Blog Posts</span>
+                        </span>
+                    </td>
+                    <td>{{#if stats.posts}}{{stats.posts}}{{else}}0{{/if}}</td>
+                    <td>{{#if stats.postsLastIndexed}}{{formatDateTime stats.postsLastIndexed}}{{else}}Never{{/if}}</td>
+                    <td>
+                        <span class="tag is-success">
+                            <i class="fas fa-check"></i>
+                            Current
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="fas fa-images"></i>
+                            </span>
+                            <span>Media Files</span>
+                        </span>
+                    </td>
+                    <td>{{#if stats.media}}{{stats.media}}{{else}}0{{/if}}</td>
+                    <td>{{#if stats.mediaLastIndexed}}{{formatDateTime stats.mediaLastIndexed}}{{else}}Never{{/if}}</td>
+                    <td>
+                        <span class="tag is-warning">
+                            <i class="fas fa-clock"></i>
+                            Pending
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function rebuildIndex() {
+    if (confirm('Rebuild search index? This may take a few minutes for large sites.')) {
+        showNotification('Rebuilding search index...', 'info');
+        
+        fetch('/admin/search/rebuild', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Search index rebuilt successfully!', 'success');
+                location.reload();
+            } else {
+                showNotification('Failed to rebuild index', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error rebuilding index', 'error');
+            console.error('Error:', error);
+        });
+    }
+}
+
+function clearIndex() {
+    if (confirm('Clear search index? This will remove all indexed content.')) {
+        showNotification('Clearing search index...', 'info');
+        
+        fetch('/admin/search/clear', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Search index cleared!', 'success');
+                location.reload();
+            } else {
+                showNotification('Failed to clear index', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error clearing index', 'error');
+            console.error('Error:', error);
+        });
+    }
+}
+
+function testSearch() {
+    const query = document.getElementById('testQuery').value;
+    if (!query.trim()) {
+        showNotification('Please enter a search query', 'warning');
+        return;
+    }
+
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.innerHTML = '<div class="has-text-centered"><div class="button is-loading is-static">Searching...</div></div>';
+
+    fetch(`/search?q=${encodeURIComponent(query)}&format=json`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.results && data.results.length > 0) {
+                resultsDiv.innerHTML = `
+                    <div class="notification is-success is-light">
+                        <strong>Found ${data.results.length} results in ${data.searchTime}ms</strong>
+                        <ul style="margin-top: 0.5rem;">
+                            ${data.results.map(result => `<li>${result.title}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = '<div class="notification is-warning is-light">No results found</div>';
+            }
+        })
+        .catch(error => {
+            resultsDiv.innerHTML = '<div class="notification is-danger is-light">Search test failed</div>';
+            console.error('Error:', error);
+        });
+}
+
+function updateSearchConfig(event) {
+    event.preventDefault();
+    showNotification('Search configuration saved!', 'success');
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification is-${type} is-light`;
+    notification.innerHTML = `<button class="delete"></button><strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}`;
+    notification.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;max-width:400px;';
+    
+    notification.querySelector('.delete').addEventListener('click', () => {
+        notification.remove();
+    });
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>

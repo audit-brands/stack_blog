@@ -601,7 +601,7 @@ router.get('/setup', (req, res) => {
     return res.redirect('/admin/login');
   }
 
-  res.render('pages/setup', {
+  res.render('admin/pages/setup.hbs', {
     page: {
       metadata: {
         title: 'Admin Setup'
@@ -634,7 +634,7 @@ router.get('/pages', authService.requireAuth.bind(authService), csrfProtection, 
       search
     });
     
-    res.render('pages/pages', {
+    res.render('admin/pages/pages.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -656,7 +656,7 @@ router.get('/pages', authService.requireAuth.bind(authService), csrfProtection, 
     });
   } catch (error) {
     console.error('Error loading pages:', error);
-    res.status(500).render('pages/error', {
+    res.status(500).render('pages/error.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -679,7 +679,7 @@ router.get('/pages', authService.requireAuth.bind(authService), csrfProtection, 
 router.get('/pages/new', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   const user = authService.getAuthenticatedUser(req.session);
   
-  res.render('pages/page-edit', {
+  res.render('admin/pages/page-edit.hbs', {
     layout: 'admin',
     page: {
       metadata: {
@@ -708,7 +708,7 @@ router.get('/pages/:slug/edit', authService.requireAuth.bind(authService), csrfP
     const editPage = await contentService.getPage(slug);
     
     if (!editPage) {
-      return res.status(404).render('pages/error', {
+      return res.status(404).render('pages/error.hbs', {
         layout: 'admin',
         page: {
           metadata: {
@@ -724,7 +724,7 @@ router.get('/pages/:slug/edit', authService.requireAuth.bind(authService), csrfP
       });
     }
     
-    res.render('pages/page-edit', {
+    res.render('admin/pages/page-edit.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -742,7 +742,7 @@ router.get('/pages/:slug/edit', authService.requireAuth.bind(authService), csrfP
     });
   } catch (error) {
     console.error('Error loading page for editing:', error);
-    res.status(500).render('pages/error', {
+    res.status(500).render('pages/error.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -826,7 +826,7 @@ router.post('/pages/save', authService.requireAuth.bind(authService), csrfProtec
       });
     }
     
-    res.status(500).render('pages/error', {
+    res.status(500).render('pages/error.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -895,7 +895,7 @@ router.get('/media', authService.requireAuth.bind(authService), csrfProtection, 
       type
     });
     
-    res.render('pages/media', {
+    res.render('admin/pages/media.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -918,7 +918,7 @@ router.get('/media', authService.requireAuth.bind(authService), csrfProtection, 
     });
   } catch (error) {
     console.error('Error loading media:', error);
-    res.status(500).render('pages/error', {
+    res.status(500).render('pages/error.hbs', {
       layout: 'admin',
       page: {
         metadata: {
@@ -1079,7 +1079,7 @@ router.get('/cache', authService.requireAuth.bind(authService), csrfProtection, 
   const stats = cacheService.getStats();
   const templateCacheStats = templateCacheService.getStats();
   
-  res.render('pages/cache', {
+  res.render('admin/pages/cache.hbs', {
     layout: 'admin',
     page: {
       metadata: {
@@ -1164,7 +1164,8 @@ router.get('/plugins', authService.requireAuth.bind(authService), csrfProtection
   const plugins = pluginService.getAllPlugins();
   const hooks = pluginService.getHooksInfo();
   
-  res.render('admin/plugins', {
+  res.render('admin/pages/plugins.hbs', {
+    layout: 'admin',
     page: {
       metadata: {
         title: 'Plugin Management'
@@ -1247,7 +1248,7 @@ router.get('/search', authService.requireAuth.bind(authService), csrfProtection,
   const user = authService.getAuthenticatedUser(req.session);
   const stats = searchService.getStats();
   
-  res.render('pages/search', {
+  res.render('admin/pages/search.hbs', {
     layout: 'admin',
     page: {
       metadata: {
@@ -1342,7 +1343,7 @@ router.get('/search/suggestions', authService.requireAuth.bind(authService), asy
 router.get('/themes', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   const user = authService.getAuthenticatedUser(req.session);
   
-  res.render('pages/themes', {
+  res.render('admin/pages/themes.hbs', {
     layout: 'admin',
     page: {
       metadata: {
@@ -1365,7 +1366,7 @@ router.get('/themes', authService.requireAuth.bind(authService), csrfProtection,
 router.get('/rss-analytics', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
   const user = authService.getAuthenticatedUser(req.session);
   
-  res.render('pages/rss-analytics', {
+  res.render('admin/pages/rss-analytics.hbs', {
     layout: 'admin',
     page: {
       metadata: {

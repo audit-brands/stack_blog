@@ -1,5 +1,5 @@
 /* Admin Panel Styles */
-@import url('../../node_modules/bulma/css/bulma.min.css');
+/* Bulma CSS is loaded from CDN in the layout template */
 
 /* Custom admin styling */
 :root {
