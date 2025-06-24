@@ -1416,7 +1416,7 @@ router.get('/api/themes/current', authService.requireAuth.bind(authService), asy
     
     const currentTheme = {
       name: themeService.activeTheme || 'default',
-      engine: themeService.getCurrentEngine() || 'nunjucks'
+      engine: themeService.getCurrentEngine() || 'handlebars'
     };
     
     // Get additional theme info if available

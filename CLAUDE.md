@@ -9,7 +9,7 @@ This is a **Node.js Flat-File CMS** project inspired by Kirby CMS. The project i
 ### Key Technologies (Planned)
 - **Backend**: Node.js with Express.js
 - **Content Storage**: Markdown files with YAML frontmatter
-- **Templating**: Nunjucks, Handlebars, or EJS
+- **Templating**: Handlebars (for Ghost theme compatibility)
 - **Authentication**: bcrypt for single admin user
 - **File Processing**: Sharp (images), Multer (uploads), gray-matter (Markdown parsing)
 

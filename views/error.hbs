@@ -1,6 +1,3 @@
-{% extends "layout.html" %}
-
-{% block content %}
 <div class="error-page">
     <h1>500 - Server Error</h1>
     <p>Sorry, something went wrong on our server.</p>
@@ -10,11 +7,10 @@
         <a href="javascript:history.back()" class="button button-secondary">Go Back</a>
     </div>
     
-    {% if error %}
+    {{#if error}}
     <details class="error-details">
         <summary>Technical Details (Development Mode)</summary>
-        <pre><code>{{ error.stack }}</code></pre>
+        <pre><code>{{error.stack}}</code></pre>
     </details>
-    {% endif %}
+    {{/if}}
 </div>
-{% endblock %}

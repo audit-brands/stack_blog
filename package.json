@@ -76,7 +76,6 @@
     "js-yaml": "^4.1.0",
     "markdown-it": "^14.1.0",
     "multer": "^2.0.1",
-    "nunjucks": "^3.2.4",
     "sharp": "^0.34.2"
   },
   "devDependencies": {

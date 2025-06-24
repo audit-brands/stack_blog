@@ -1,6 +1,5 @@
 const express = require('express');
 const session = require('express-session');
-const nunjucks = require('nunjucks');
 const handlebars = require('handlebars');
 const exphbs = require('express-handlebars');
 const path = require('path');
@@ -47,45 +46,35 @@ app.use(sanitizeInput);
 // General rate limiting
 app.use(generalLimiter);
 
-// Configure Nunjucks template engine
-const templatePath = path.join(__dirname, 'templates');
-const nunjucksEnv = nunjucks.configure(templatePath, {
-  autoescape: true,
-  express: app,
-  watch: process.env.NODE_ENV !== 'production'
-});
 
-// Add custom template filters
-nunjucksEnv.addFilter('markdown', (str) => {
-  const { markdownService } = require('./services');
-  return markdownService.render(str);
-});
-
-nunjucksEnv.addFilter('preview', (str, length = 160) => {
-  const { markdownService } = require('./services');
-  return markdownService.renderPreview(str, length);
-});
-
-nunjucksEnv.addFilter('date', (str, format = 'F j, Y') => {
-  const date = new Date(str);
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-});
-
-nunjucksEnv.addFilter('startsWith', (str, prefix) => {
-  return str && typeof str === 'string' && str.startsWith(prefix);
-});
-
-// Configure Handlebars for admin panel
+// Configure Handlebars as primary template engine
 const hbs = exphbs.create({
   extname: '.hbs',
-  defaultLayout: 'admin',
-  layoutsDir: path.join(__dirname, 'views/admin/layouts'),
-  partialsDir: path.join(__dirname, 'views/admin/partials'),
+  defaultLayout: 'main',
+  layoutsDir: path.join(__dirname, 'views/layouts'),
+  partialsDir: path.join(__dirname, 'views/partials'),
+  viewsDir: path.join(__dirname, 'views'),
   helpers: {
+    // Frontend helpers (migrated from Nunjucks)
+    markdown: function(str) {
+      const { markdownService } = require('./services');
+      return new handlebars.SafeString(markdownService.render(str));
+    },
+    preview: function(str, length = 160) {
+      const { markdownService } = require('./services');
+      return markdownService.renderPreview(str, length);
+    },
+    date: function(str, format = 'F j, Y') {
+      const date = new Date(str);
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    },
+    startsWith: function(str, prefix) {
+      return str && typeof str === 'string' && str.startsWith(prefix);
+    },
     // Admin-specific helpers
     isActive: function(current, path) {
       return current && current.includes(path) ? 'is-active' : '';
@@ -206,10 +195,9 @@ const hbs = exphbs.create({
   }
 });
 
-// Set up multiple view engines
-app.engine('html', nunjucksEnv.render.bind(nunjucksEnv));
+// Set up Handlebars as primary view engine
 app.engine('hbs', hbs.engine);
-app.set('view engine', 'html');
+app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Initialize Theme Service with template caching

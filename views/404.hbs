@@ -1,6 +1,3 @@
-{% extends "layout.html" %}
-
-{% block content %}
 <div class="error-page">
     <h1>404 - Page Not Found</h1>
     <p>Sorry, the page you're looking for doesn't exist.</p>
@@ -12,7 +9,6 @@
     
     <details class="error-details">
         <summary>Technical Details</summary>
-        <p>Requested path: <code>{{ currentPath }}</code></p>
+        <p>Requested path: <code>{{currentPath}}</code></p>
     </details>
 </div>
-{% endblock %}

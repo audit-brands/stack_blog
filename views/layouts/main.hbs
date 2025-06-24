@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if page.metadata.title %}{{ page.metadata.title }} - {% endif %}{{ site.title }}</title>
+    <title>{{#if page.metadata.title}}{{page.metadata.title}} - {{/if}}{{site.title}}</title>
     
-    {% if page.metadata.description %}
-    <meta name="description" content="{{ page.metadata.description }}">
-    {% else %}
-    <meta name="description" content="{{ site.description }}">
-    {% endif %}
+    {{#if page.metadata.description}}
+    <meta name="description" content="{{page.metadata.description}}">
+    {{else}}
+    <meta name="description" content="{{site.description}}">
+    {{/if}}
     
     <meta name="generator" content="Stack Blog CMS">
     
     <!-- Basic CSS -->
     <link rel="stylesheet" href="/css/main.css">
     
-    {% block head %}{% endblock %}
+    {{#block "head"}}{{/block}}
 </head>
 <body>
     <header class="site-header">
         <div class="container">
             <h1 class="site-title">
-                <a href="/">{{ site.title }}</a>
+                <a href="/">{{site.title}}</a>
             </h1>
             <nav class="site-nav">
                 <ul>
-                    <li><a href="/" {% if currentPath == '/' %}class="active"{% endif %}>Home</a></li>
-                    <li><a href="/about" {% if currentPath == '/about' %}class="active"{% endif %}>About</a></li>
+                    <li><a href="/" {{#if (eq currentPath '/')}}class="active"{{/if}}>Home</a></li>
+                    <li><a href="/about" {{#if (eq currentPath '/about')}}class="active"{{/if}}>About</a></li>
                     <li><a href="/blog">Blog</a></li>
                 </ul>
             </nav>
@@ -36,19 +36,19 @@
 
     <main class="site-main">
         <div class="container">
-            {% block content %}{% endblock %}
+            {{{body}}}
         </div>
     </main>
 
     <footer class="site-footer">
         <div class="container">
-            <p>&copy; 2025 {{ site.title }}. Powered by Stack Blog CMS.</p>
+            <p>&copy; 2025 {{site.title}}. Powered by Stack Blog CMS.</p>
         </div>
     </footer>
 
     <!-- Basic JavaScript -->
     <script src="/js/main.js"></script>
     
-    {% block scripts %}{% endblock %}
+    {{#block "scripts"}}{{/block}}
 </body>
 </html>

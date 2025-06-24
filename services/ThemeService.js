@@ -7,7 +7,7 @@ class ThemeService {
     this.app = app;
     this.themesPath = path.join(process.cwd(), 'themes');
     this.activeTheme = null;
-    this.engine = 'nunjucks'; // default
+    this.engine = 'handlebars'; // default
     this.handlebarsEngine = null;
     this.templateCacheService = templateCacheService;
     
@@ -418,13 +418,8 @@ class ThemeService {
               await fs.access(path.join(themePath, 'index.hbs'));
               metadata.engine = 'handlebars';
             } catch (error) {
-              // Check for index.njk (Nunjucks theme)
-              try {
-                await fs.access(path.join(themePath, 'index.njk'));
-                metadata.engine = 'nunjucks';
-              } catch (error) {
-                metadata.engine = 'unknown';
-              }
+              // No Nunjucks support - mark as unknown
+              metadata.engine = 'unknown';
             }
           }
           
@@ -468,8 +463,8 @@ class ThemeService {
       }
     }
     
-    // Fall back to default Nunjucks rendering
-    throw new Error('Nunjucks rendering not implemented in ThemeService');
+    // Only Handlebars rendering is supported
+    throw new Error('Only Handlebars (.hbs) templates are supported. Nunjucks support has been removed.');
   }
 
   /**

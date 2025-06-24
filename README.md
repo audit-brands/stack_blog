@@ -8,7 +8,7 @@ A modern, secure flat-file CMS built with Node.js that manages content using Mar
 - **Flat-File Architecture**: No database required - content stored as Markdown files
 - **Dynamic Routing**: Automatic URL mapping from file structure
 - **Markdown Support**: Full GitHub Flavored Markdown with frontmatter metadata
-- **Template System**: Flexible Nunjucks templates with inheritance
+- **Template System**: Flexible Handlebars templates with inheritance
 - **Admin Panel**: Modern, responsive admin interface with Bulma CSS
 - **File Management**: Upload and manage media files with image processing
 
@@ -144,7 +144,7 @@ stack_blog/
 ├── public/                # Static assets (CSS, JS, images)
 ├── routes/                # Express route handlers
 ├── services/              # Business logic services
-├── templates/             # Nunjucks templates
+├── views/                 # Handlebars templates
 └── __tests__/             # Test files
 ```
 
@@ -359,7 +359,7 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - Built with [Express.js](https://expressjs.com/) and [Node.js](https://nodejs.org/)
-- Templates powered by [Nunjucks](https://mozilla.github.io/nunjucks/)
+- Templates powered by [Handlebars](https://handlebarsjs.com/)
 - Styling with [Bulma CSS](https://bulma.io/)
 - Security provided by [Helmet.js](https://helmetjs.github.io/)
 - Markdown processing by [markdown-it](https://github.com/markdown-it/markdown-it)
