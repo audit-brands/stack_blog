@@ -1,6 +1,6 @@
 const express = require('express');
 const csrf = require('csurf');
-const { authService, contentService, mediaService, cacheService, pluginService, searchService } = require('../services');
+const { authService, contentService, mediaService, cacheService, pluginService, searchService, getThemeService } = require('../services');
 const { authLimiter, uploadLimiter, uploadSecurityCheck } = require('../middleware/security');
 const { validateLogin, validatePage, validateSlug, validatePlugin, validatePassword } = require('../middleware/validation');
 
@@ -854,5 +854,196 @@ router.get('/search/suggestions', authService.requireAuth.bind(authService), asy
     });
   }
 });
+
+/**
+ * Theme management page
+ */
+router.get('/themes', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
+  const user = authService.getAuthenticatedUser(req.session);
+  
+  res.render('admin/themes', {
+    page: {
+      metadata: {
+        title: 'Theme Management'
+      }
+    },
+    site: {
+      title: 'Stack Blog',
+      description: 'Admin Panel'
+    },
+    user,
+    csrfToken: req.csrfToken(),
+    currentPath: req.path
+  });
+});
+
+/**
+ * API: List themes
+ */
+router.get('/api/themes', authService.requireAuth.bind(authService), async (req, res) => {
+  try {
+    const themeService = getThemeService();
+    if (!themeService) {
+      return res.status(500).json({ error: 'Theme service not available' });
+    }
+    
+    const themes = await themeService.listThemes();
+    res.json(themes);
+  } catch (error) {
+    console.error('Error listing themes:', error);
+    res.status(500).json({
+      error: 'Failed to list themes',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * API: Get current theme
+ */
+router.get('/api/themes/current', authService.requireAuth.bind(authService), async (req, res) => {
+  try {
+    const themeService = getThemeService();
+    if (!themeService) {
+      return res.status(500).json({ error: 'Theme service not available' });
+    }
+    
+    const currentTheme = {
+      name: themeService.activeTheme || 'default',
+      engine: themeService.getCurrentEngine() || 'nunjucks'
+    };
+    
+    // Get additional theme info if available
+    const themes = await themeService.listThemes();
+    const themeInfo = themes.find(theme => theme.name === currentTheme.name);
+    
+    if (themeInfo) {
+      Object.assign(currentTheme, themeInfo);
+    }
+    
+    res.json(currentTheme);
+  } catch (error) {
+    console.error('Error getting current theme:', error);
+    res.status(500).json({
+      error: 'Failed to get current theme',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * API: Get theme details
+ */
+router.get('/api/themes/:themeName', authService.requireAuth.bind(authService), async (req, res) => {
+  try {
+    const { themeName } = req.params;
+    const themeService = getThemeService();
+    
+    if (!themeService) {
+      return res.status(500).json({ error: 'Theme service not available' });
+    }
+    
+    const themes = await themeService.listThemes();
+    const theme = themes.find(t => t.name === themeName);
+    
+    if (!theme) {
+      return res.status(404).json({ error: 'Theme not found' });
+    }
+    
+    // Add file listing for theme details
+    const fs = require('fs').promises;
+    const path = require('path');
+    
+    try {
+      const themePath = path.join(themeService.themesPath, themeName);
+      const files = await listThemeFiles(themePath);
+      theme.files = files;
+    } catch (fileError) {
+      theme.files = [];
+    }
+    
+    res.json(theme);
+  } catch (error) {
+    console.error('Error getting theme details:', error);
+    res.status(500).json({
+      error: 'Failed to get theme details',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * API: Activate theme
+ */
+router.post('/api/themes/activate', authService.requireAuth.bind(authService), csrfProtection, async (req, res) => {
+  try {
+    const { theme, engine } = req.body;
+    const themeService = getThemeService();
+    
+    if (!themeService) {
+      return res.status(500).json({ error: 'Theme service not available' });
+    }
+    
+    if (!theme) {
+      return res.status(400).json({ error: 'Theme name is required' });
+    }
+    
+    const success = await themeService.setActiveTheme(theme, engine || 'handlebars');
+    
+    if (success) {
+      res.json({
+        success: true,
+        message: `Theme "${theme}" activated successfully`,
+        theme: {
+          name: theme,
+          engine: engine || 'handlebars'
+        }
+      });
+    } else {
+      res.status(400).json({
+        error: 'Failed to activate theme',
+        message: 'Theme activation was not successful'
+      });
+    }
+  } catch (error) {
+    console.error('Error activating theme:', error);
+    res.status(500).json({
+      error: 'Failed to activate theme',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Helper function to list theme files recursively
+ */
+async function listThemeFiles(themePath, basePath = '') {
+  const fs = require('fs').promises;
+  const path = require('path');
+  
+  try {
+    const entries = await fs.readdir(themePath, { withFileTypes: true });
+    const files = [];
+    
+    for (const entry of entries) {
+      const fullPath = path.join(themePath, entry.name);
+      const relativePath = basePath ? `${basePath}/${entry.name}` : entry.name;
+      
+      if (entry.isDirectory()) {
+        // Skip node_modules and .git directories
+        if (entry.name === 'node_modules' || entry.name === '.git') continue;
+        
+        const subFiles = await listThemeFiles(fullPath, relativePath);
+        files.push(...subFiles);
+      } else {
+        files.push(relativePath);
+      }
+    }
+    
+    return files.sort();
+  } catch (error) {
+    return [];
+  }
+}
 
 module.exports = router;

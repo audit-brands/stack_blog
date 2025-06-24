@@ -116,35 +116,207 @@ class ThemeService {
         return options.inverse(this);
       },
 
-      // Ghost head helper (basic implementation)
+      // Enhanced ghost_head helper
       ghost_head: function() {
         const context = this;
         let html = '';
         
-        // Basic meta tags
-        if (context.page && context.page.metadata) {
-          if (context.page.metadata.title) {
-            html += `<meta property="og:title" content="${context.page.metadata.title}">\n`;
-          }
-          if (context.page.metadata.description) {
-            html += `<meta property="og:description" content="${context.page.metadata.description}">\n`;
-            html += `<meta name="description" content="${context.page.metadata.description}">\n`;
-          }
+        // Title and description
+        if (context.meta_title) {
+          html += `<title>${context.meta_title}</title>\n`;
+          html += `<meta property="og:title" content="${context.meta_title}">\n`;
+          html += `<meta name="twitter:title" content="${context.meta_title}">\n`;
+        }
+        
+        if (context.meta_description) {
+          html += `<meta name="description" content="${context.meta_description}">\n`;
+          html += `<meta property="og:description" content="${context.meta_description}">\n`;
+          html += `<meta name="twitter:description" content="${context.meta_description}">\n`;
         }
         
         // Canonical URL
         if (context.canonical) {
           html += `<link rel="canonical" href="${context.canonical}">\n`;
+          html += `<meta property="og:url" content="${context.canonical}">\n`;
         }
+        
+        // Site info
+        if (context['@site']) {
+          html += `<meta property="og:site_name" content="${context['@site'].title}">\n`;
+          html += `<meta name="twitter:site" content="@${context['@site'].twitter || context['@site'].title}">\n`;
+        }
+        
+        // Article specific meta for posts
+        if (context.post) {
+          html += `<meta property="og:type" content="article">\n`;
+          html += `<meta property="article:published_time" content="${context.post.published_at}">\n`;
+          html += `<meta property="article:modified_time" content="${context.post.updated_at}">\n`;
+          
+          if (context.post.authors && context.post.authors[0]) {
+            html += `<meta property="article:author" content="${context.post.authors[0].name}">\n`;
+          }
+          
+          if (context.post.tags) {
+            context.post.tags.forEach(tag => {
+              html += `<meta property="article:tag" content="${tag.name}">\n`;
+            });
+          }
+          
+          if (context.post.feature_image) {
+            html += `<meta property="og:image" content="${context.post.feature_image}">\n`;
+            html += `<meta name="twitter:image" content="${context.post.feature_image}">\n`;
+          }
+        } else {
+          html += `<meta property="og:type" content="website">\n`;
+        }
+        
+        // Twitter card type
+        html += `<meta name="twitter:card" content="summary_large_image">\n`;
+        
+        // JSON-LD structured data
+        if (context.structured_data) {
+          html += `<script type="application/ld+json">\n${JSON.stringify(context.structured_data, null, 2)}\n</script>\n`;
+        }
+        
+        // Generator meta
+        html += `<meta name="generator" content="Stack Blog CMS">\n`;
         
         // Return safe string for Handlebars
         return { string: html };
       },
 
-      // Ghost foot helper (basic implementation)
+      // Enhanced ghost_foot helper
       ghost_foot: function() {
-        // Basic analytics or tracking code can be added here
-        return { string: '' };
+        const context = this;
+        let html = '';
+        
+        // Site-level code injection
+        if (context['@site'] && context['@site'].codeinjection_foot) {
+          html += context['@site'].codeinjection_foot;
+        }
+        
+        // Post-level code injection
+        if (context.post && context.post.codeinjection_foot) {
+          html += context.post.codeinjection_foot;
+        }
+        
+        return { string: html };
+      },
+
+      // Navigation helper
+      navigation: function(options) {
+        const context = this;
+        const navigation = context['@site']?.navigation || [];
+        
+        if (!navigation.length) {
+          return options.inverse(this);
+        }
+        
+        let result = '';
+        navigation.forEach((item, index) => {
+          const data = {
+            ...options.data,
+            index,
+            first: index === 0,
+            last: index === navigation.length - 1,
+            current: context.canonical && item.url && context.canonical.includes(item.url)
+          };
+          
+          result += options.fn(item, { data });
+        });
+        
+        return result;
+      },
+
+      // Pagination helper
+      pagination: function(options) {
+        const context = this;
+        const pagination = context.pagination;
+        
+        if (!pagination || pagination.pages <= 1) {
+          return options.inverse(this);
+        }
+        
+        return options.fn(pagination);
+      },
+
+      // Has helper for checking properties
+      has: function(value, options) {
+        const context = this;
+        
+        // Check for context flags
+        if (typeof value === 'string') {
+          if (value === 'tag' && context.tag) return options.fn(this);
+          if (value === 'author' && context.author) return options.fn(this);
+          if (value === 'pagination' && context.pagination) return options.fn(this);
+          if (value === 'feature_image' && (context.post?.feature_image || context.page?.feature_image)) return options.fn(this);
+          if (value === 'excerpt' && (context.post?.excerpt || context.page?.excerpt)) return options.fn(this);
+        }
+        
+        return options.inverse(this);
+      },
+
+      // Is helper for context checking
+      is: function(value, options) {
+        const context = this;
+        
+        if (typeof value === 'string') {
+          if (context.context && context.context.includes(value)) {
+            return options.fn(this);
+          }
+        }
+        
+        return options.inverse(this);
+      },
+
+      // Date helper for formatting dates
+      date: function(date, format, options) {
+        if (!date) return '';
+        
+        const d = new Date(date);
+        
+        // Simple format mappings
+        switch (format) {
+          case 'YYYY':
+            return d.getFullYear().toString();
+          case 'MM':
+            return (d.getMonth() + 1).toString().padStart(2, '0');
+          case 'DD':
+            return d.getDate().toString().padStart(2, '0');
+          case 'MMMM':
+            return d.toLocaleString('en-US', { month: 'long' });
+          case 'MMM':
+            return d.toLocaleString('en-US', { month: 'short' });
+          case 'YYYY-MM-DD':
+            return d.toISOString().split('T')[0];
+          default:
+            return d.toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            });
+        }
+      },
+
+      // Excerpt helper
+      excerpt: function(options) {
+        const context = this;
+        const length = options.hash?.words || 50;
+        
+        let text = '';
+        if (context.excerpt) {
+          text = context.excerpt;
+        } else if (context.html) {
+          // Strip HTML and get first words
+          text = context.html.replace(/<[^>]*>/g, '');
+        }
+        
+        if (!text) return '';
+        
+        const words = text.split(' ');
+        if (words.length <= length) return text;
+        
+        return words.slice(0, length).join(' ') + '...';
       }
     };
   }

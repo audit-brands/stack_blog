@@ -1,0 +1,427 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+<div class="content-header">
+    <h1>
+        <span class="icon">
+            <i class="fas fa-palette"></i>
+        </span>
+        Theme Management
+    </h1>
+    <div class="content-header-actions">
+        <button class="button is-primary" onclick="refreshThemes()">
+            <span class="icon">
+                <i class="fas fa-sync-alt"></i>
+            </span>
+            <span>Refresh Themes</span>
+        </button>
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column is-8">
+        <div class="form-section">
+            <h3>
+                <span class="icon">
+                    <i class="fas fa-th-large"></i>
+                </span>
+                Available Themes
+            </h3>
+
+            <div id="themes-container">
+                <div class="has-text-centered" style="padding: 2rem;">
+                    <span class="icon is-large">
+                        <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                    </span>
+                    <p>Loading themes...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="column is-4">
+        <div class="form-section">
+            <h3>
+                <span class="icon">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+                Current Theme
+            </h3>
+
+            <div id="current-theme-info">
+                <div class="has-text-centered" style="padding: 2rem;">
+                    <span class="icon is-large">
+                        <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                    </span>
+                    <p>Loading current theme...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>
+                <span class="icon">
+                    <i class="fas fa-question-circle"></i>
+                </span>
+                Theme Support
+            </h3>
+
+            <div class="content">
+                <div class="notification is-info is-light">
+                    <h4>Ghost Theme Compatibility</h4>
+                    <p>Stack Blog supports Ghost themes out of the box! Simply place any Ghost theme in the <code>themes/</code> directory.</p>
+                </div>
+
+                <div class="box">
+                    <h5>Supported Features:</h5>
+                    <ul>
+                        <li>✅ Handlebars templates (.hbs)</li>
+                        <li>✅ Ghost helpers (foreach, asset, navigation)</li>
+                        <li>✅ Theme assets (CSS, JS, fonts)</li>
+                        <li>✅ Partials and layouts</li>
+                        <li>✅ Context variables (posts, pagination)</li>
+                        <li>✅ Meta tags and SEO</li>
+                    </ul>
+                </div>
+
+                <div class="notification is-warning is-light">
+                    <p><strong>Note:</strong> Some advanced Ghost features like routes.yaml may have limited support in this version.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Theme Details Modal -->
+<div class="modal" id="theme-details-modal">
+    <div class="modal-background" onclick="closeThemeModal()"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title" id="theme-modal-title">Theme Details</p>
+            <button class="delete" aria-label="close" onclick="closeThemeModal()"></button>
+        </header>
+        <section class="modal-card-body" id="theme-modal-body">
+            <!-- Content will be populated by JavaScript -->
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-primary" id="activate-theme-btn" onclick="activateTheme()">Activate Theme</button>
+            <button class="button" onclick="closeThemeModal()">Cancel</button>
+        </footer>
+    </div>
+</div>
+
+<script>
+let currentThemeData = null;
+let selectedTheme = null;
+
+// Load themes on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadThemes();
+    loadCurrentTheme();
+});
+
+async function loadThemes() {
+    try {
+        const response = await fetch('/admin/api/themes');
+        const themes = await response.json();
+        
+        const container = document.getElementById('themes-container');
+        
+        if (themes.length === 0) {
+            container.innerHTML = `
+                <div class="notification is-warning">
+                    <h4>No themes found</h4>
+                    <p>Place Ghost themes in the <code>themes/</code> directory to get started.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const themesHTML = themes.map(theme => `
+            <div class="box theme-card" data-theme="${theme.name}">
+                <div class="media">
+                    <div class="media-left">
+                        <figure class="image is-64x64">
+                            <div class="box has-text-centered theme-icon ${theme.engine === 'ghost' ? 'is-primary' : theme.engine === 'handlebars' ? 'is-info' : 'is-light'}" style="height: 64px; display: flex; align-items: center; justify-content: center;">
+                                <span class="icon is-large">
+                                    <i class="fas ${getThemeIcon(theme.engine)} fa-2x"></i>
+                                </span>
+                            </div>
+                        </figure>
+                    </div>
+                    <div class="media-content">
+                        <div class="content">
+                            <h4>${theme.name}</h4>
+                            <p class="subtitle is-6">
+                                <span class="tag ${getEngineClass(theme.engine)}">${theme.engine}</span>
+                                ${theme.version ? `<span class="tag is-light">v${theme.version}</span>` : ''}
+                                ${currentThemeData && currentThemeData.name === theme.name ? '<span class="tag is-success">Active</span>' : ''}
+                            </p>
+                            ${theme.description ? `<p>${theme.description}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="media-right">
+                        <div class="buttons">
+                            <button class="button is-small is-info" onclick="showThemeDetails('${theme.name}')">
+                                <span class="icon">
+                                    <i class="fas fa-info"></i>
+                                </span>
+                                <span>Details</span>
+                            </button>
+                            ${currentThemeData && currentThemeData.name === theme.name ? '' : `
+                                <button class="button is-small is-primary" onclick="activateThemeDirectly('${theme.name}', '${theme.engine === 'ghost' ? 'handlebars' : theme.engine}')">
+                                    <span class="icon">
+                                        <i class="fas fa-check"></i>
+                                    </span>
+                                    <span>Activate</span>
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        container.innerHTML = themesHTML;
+        
+    } catch (error) {
+        console.error('Error loading themes:', error);
+        document.getElementById('themes-container').innerHTML = `
+            <div class="notification is-danger">
+                <h4>Error loading themes</h4>
+                <p>Unable to load theme list. Please try again.</p>
+            </div>
+        `;
+    }
+}
+
+async function loadCurrentTheme() {
+    try {
+        const response = await fetch('/admin/api/themes/current');
+        currentThemeData = await response.json();
+        
+        const container = document.getElementById('current-theme-info');
+        
+        if (currentThemeData) {
+            container.innerHTML = `
+                <div class="box">
+                    <div class="media">
+                        <div class="media-left">
+                            <figure class="image is-48x48">
+                                <div class="box has-text-centered ${getEngineClass(currentThemeData.engine)}" style="height: 48px; display: flex; align-items: center; justify-content: center;">
+                                    <span class="icon">
+                                        <i class="fas ${getThemeIcon(currentThemeData.engine)}"></i>
+                                    </span>
+                                </div>
+                            </figure>
+                        </div>
+                        <div class="media-content">
+                            <h5>${currentThemeData.name}</h5>
+                            <p class="subtitle is-6">
+                                <span class="tag ${getEngineClass(currentThemeData.engine)}">${currentThemeData.engine}</span>
+                                <span class="tag is-success">Active</span>
+                            </p>
+                        </div>
+                    </div>
+                    ${currentThemeData.description ? `<p>${currentThemeData.description}</p>` : ''}
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <div class="notification is-warning">
+                    <p>No active theme detected</p>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('Error loading current theme:', error);
+    }
+}
+
+function getThemeIcon(engine) {
+    switch (engine) {
+        case 'ghost':
+        case 'handlebars':
+            return 'fa-ghost';
+        case 'nunjucks':
+            return 'fa-code';
+        default:
+            return 'fa-palette';
+    }
+}
+
+function getEngineClass(engine) {
+    switch (engine) {
+        case 'ghost':
+            return 'is-primary';
+        case 'handlebars':
+            return 'is-info';
+        case 'nunjucks':
+            return 'is-warning';
+        default:
+            return 'is-light';
+    }
+}
+
+async function showThemeDetails(themeName) {
+    try {
+        const response = await fetch(`/admin/api/themes/${themeName}`);
+        const theme = await response.json();
+        
+        selectedTheme = theme;
+        
+        document.getElementById('theme-modal-title').textContent = `${theme.name} Details`;
+        
+        const modalBody = document.getElementById('theme-modal-body');
+        modalBody.innerHTML = `
+            <div class="content">
+                <h5>Theme Information</h5>
+                <table class="table is-fullwidth">
+                    <tbody>
+                        <tr>
+                            <td><strong>Name</strong></td>
+                            <td>${theme.name}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Engine</strong></td>
+                            <td>
+                                <span class="tag ${getEngineClass(theme.engine)}">${theme.engine}</span>
+                            </td>
+                        </tr>
+                        ${theme.version ? `
+                            <tr>
+                                <td><strong>Version</strong></td>
+                                <td>${theme.version}</td>
+                            </tr>
+                        ` : ''}
+                        ${theme.description ? `
+                            <tr>
+                                <td><strong>Description</strong></td>
+                                <td>${theme.description}</td>
+                            </tr>
+                        ` : ''}
+                    </tbody>
+                </table>
+                
+                ${theme.files ? `
+                    <h5>Theme Files</h5>
+                    <div class="box">
+                        ${theme.files.map(file => `<span class="tag is-light" style="margin: 2px;">${file}</span>`).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        const activateBtn = document.getElementById('activate-theme-btn');
+        if (currentThemeData && currentThemeData.name === theme.name) {
+            activateBtn.style.display = 'none';
+        } else {
+            activateBtn.style.display = 'inline-block';
+        }
+        
+        document.getElementById('theme-details-modal').classList.add('is-active');
+        
+    } catch (error) {
+        console.error('Error loading theme details:', error);
+        showNotification('Error loading theme details', 'is-danger');
+    }
+}
+
+function closeThemeModal() {
+    document.getElementById('theme-details-modal').classList.remove('is-active');
+    selectedTheme = null;
+}
+
+async function activateTheme() {
+    if (!selectedTheme) return;
+    
+    await activateThemeDirectly(selectedTheme.name, selectedTheme.engine === 'ghost' ? 'handlebars' : selectedTheme.engine);
+    closeThemeModal();
+}
+
+async function activateThemeDirectly(themeName, engine) {
+    try {
+        const response = await fetch('/admin/api/themes/activate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                theme: themeName,
+                engine: engine
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(`Theme "${themeName}" activated successfully!`, 'is-success');
+            loadCurrentTheme();
+            loadThemes(); // Reload to update active status
+        } else {
+            showNotification(result.error || 'Failed to activate theme', 'is-danger');
+        }
+        
+    } catch (error) {
+        console.error('Error activating theme:', error);
+        showNotification('Error activating theme', 'is-danger');
+    }
+}
+
+async function refreshThemes() {
+    showNotification('Refreshing themes...', 'is-info');
+    await loadThemes();
+    await loadCurrentTheme();
+    showNotification('Themes refreshed!', 'is-success');
+}
+
+function showNotification(message, type = 'is-info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <button class="delete" onclick="this.parentElement.remove()"></button>
+        ${message}
+    `;
+    
+    document.body.appendChild(notification);
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.maxWidth = '300px';
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+
+<style>
+.theme-card {
+    transition: box-shadow 0.3s ease;
+}
+
+.theme-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.theme-icon {
+    border-radius: 8px;
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.content-header-actions {
+    display: flex;
+    gap: 1rem;
+}
+</style>
+{% endblock %}
