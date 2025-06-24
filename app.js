@@ -80,15 +80,17 @@ app.set('view engine', 'html');
 const themeService = new ThemeService(app, templateCacheService);
 setThemeService(themeService);
 
-// Session configuration
+// Session configuration - adjusted for reverse proxy
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
   resave: false,
   saveUninitialized: false,
+  name: process.env.SESSION_NAME || 'stackblog.sid',
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    secure: process.env.NODE_ENV === 'production' && process.env.SESSION_SECURE !== 'false',
+    httpOnly: process.env.SESSION_HTTP_ONLY !== 'false',
+    maxAge: parseInt(process.env.SESSION_MAX_AGE) || 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : false
   }
 }));
 
