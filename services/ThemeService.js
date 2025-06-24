@@ -172,9 +172,6 @@ class ThemeService {
         this.app.engine('hbs', this.handlebarsEngine.engine);
         this.app.set('view engine', 'hbs');
         this.app.set('views', themePath);
-        
-        // Serve theme assets
-        this.app.use(`/themes/${themeName}`, require('express').static(themePath));
       }
 
       console.log(`Active theme set to '${themeName}' using ${engine} engine`);
