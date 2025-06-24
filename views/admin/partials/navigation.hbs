@@ -1,0 +1,53 @@
+<nav class="navbar admin-navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item" href="/admin">
+            <strong>{{site.title}} Admin</strong>
+        </a>
+        
+        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbar-menu">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+    </div>
+    
+    <div id="navbar-menu" class="navbar-menu">
+        <div class="navbar-end">
+            <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link">
+                    <span class="icon">
+                        <i class="fas fa-user"></i>
+                    </span>
+                    <span>{{user.username}}</span>
+                </a>
+                
+                <div class="navbar-dropdown">
+                    <a class="navbar-item" href="/admin">
+                        <span class="icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </span>
+                        Dashboard
+                    </a>
+                    <a class="navbar-item" href="/" target="_blank">
+                        <span class="icon">
+                            <i class="fas fa-external-link-alt"></i>
+                        </span>
+                        View Site
+                    </a>
+                    <hr class="navbar-divider">
+                    <div class="navbar-item">
+                        <form action="/admin/logout" method="POST" style="margin: 0;">
+                            {{{csrf}}}
+                            <button type="submit" class="button is-small is-light">
+                                <span class="icon">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </span>
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>

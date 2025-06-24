@@ -1,6 +1,8 @@
 const express = require('express');
 const session = require('express-session');
 const nunjucks = require('nunjucks');
+const handlebars = require('handlebars');
+const exphbs = require('express-handlebars');
 const path = require('path');
 const cors = require('cors');
 require('dotenv').config();
@@ -73,7 +75,120 @@ nunjucksEnv.addFilter('date', (str, format = 'F j, Y') => {
   });
 });
 
-// Set view engine
+// Configure Handlebars for admin panel
+const hbs = exphbs.create({
+  extname: '.hbs',
+  defaultLayout: 'admin',
+  layoutsDir: path.join(__dirname, 'views/admin/layouts'),
+  partialsDir: path.join(__dirname, 'views/admin/partials'),
+  helpers: {
+    // Admin-specific helpers
+    isActive: function(current, path) {
+      return current && current.includes(path) ? 'is-active' : '';
+    },
+    csrf: function() {
+      return new handlebars.SafeString(`<input type="hidden" name="_csrf" value="${this.csrfToken}">`);
+    },
+    json: function(context) {
+      return new handlebars.SafeString(JSON.stringify(context));
+    },
+    eq: function(a, b) {
+      return a === b;
+    },
+    gt: function(a, b) {
+      return a > b;
+    },
+    lt: function(a, b) {
+      return a < b;
+    },
+    gte: function(a, b) {
+      return a >= b;
+    },
+    lte: function(a, b) {
+      return a <= b;
+    },
+    and: function(a, b) {
+      return a && b;
+    },
+    or: function(a, b) {
+      return a || b;
+    },
+    not: function(a) {
+      return !a;
+    },
+    join: function(array, separator) {
+      if (!Array.isArray(array)) return '';
+      return array.join(separator || ', ');
+    },
+    formatDate: function(date) {
+      if (!date) return '';
+      return new Date(date).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    },
+    formatDateTime: function(date) {
+      if (!date) return '';
+      return new Date(date).toLocaleString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    },
+    truncate: function(str, length) {
+      if (!str) return '';
+      if (str.length <= length) return str;
+      return str.substring(0, length) + '...';
+    },
+    capitalize: function(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    },
+    formatFileSize: function(bytes) {
+      if (!bytes) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    },
+    selected: function(value, selectedValue) {
+      return value === selectedValue ? 'selected' : '';
+    },
+    checked: function(value, checkedValue) {
+      return value === checkedValue ? 'checked' : '';
+    },
+    times: function(n, block) {
+      let result = '';
+      for (let i = 0; i < n; i++) {
+        result += block.fn(i);
+      }
+      return result;
+    },
+    range: function(start, end) {
+      const result = [];
+      for (let i = start; i <= end; i++) {
+        result.push(i);
+      }
+      return result;
+    },
+    ifEquals: function(arg1, arg2, options) {
+      return (arg1 == arg2) ? options.fn(this) : options.inverse(this);
+    },
+    unless: function(conditional, options) {
+      return !conditional ? options.fn(this) : options.inverse(this);
+    },
+    pluralize: function(count, singular, plural) {
+      return count === 1 ? singular : (plural || singular + 's');
+    }
+  }
+});
+
+// Set up multiple view engines
+app.engine('html', nunjucksEnv.render.bind(nunjucksEnv));
+app.engine('hbs', hbs.engine);
 app.set('view engine', 'html');
 
 // Initialize Theme Service with template caching

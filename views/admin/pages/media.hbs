@@ -1,0 +1,470 @@
+<div class="content-header">
+    <div class="level">
+        <div class="level-left">
+            <h1>
+                <span class="icon">
+                    <i class="fas fa-images"></i>
+                </span>
+                Media Library
+            </h1>
+        </div>
+        <div class="level-right">
+            <label for="file-upload" class="button is-primary">
+                <span class="icon">
+                    <i class="fas fa-upload"></i>
+                </span>
+                <span>Upload Files</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Form -->
+<div class="box" id="upload-area">
+    <form 
+        id="upload-form" 
+        method="post" 
+        action="/admin/media/upload" 
+        enctype="multipart/form-data"
+        class="dropzone"
+    >
+        {{{csrf}}}
+        
+        <div class="field">
+            <div class="file is-large is-centered is-boxed has-name">
+                <label class="file-label">
+                    <input 
+                        class="file-input" 
+                        type="file" 
+                        name="files" 
+                        id="file-upload"
+                        multiple 
+                        accept="image/*,application/pdf,.doc,.docx,.txt"
+                    >
+                    <span class="file-cta">
+                        <span class="file-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </span>
+                        <span class="file-label">
+                            Choose files or drag & drop
+                        </span>
+                    </span>
+                    <span class="file-name" id="file-name">
+                        No files selected
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        <div class="field is-grouped is-grouped-centered">
+            <div class="control">
+                <button type="submit" class="button is-primary is-large">
+                    <span class="icon">
+                        <i class="fas fa-upload"></i>
+                    </span>
+                    <span>Upload Files</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="help has-text-centered">
+            Accepted file types: Images (JPG, PNG, GIF, WebP), PDF, DOC, DOCX, TXT<br>
+            Maximum file size: 10MB per file
+        </div>
+    </form>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="box">
+    <form method="get" action="/admin/media">
+        <div class="columns">
+            <div class="column">
+                <div class="field has-addons">
+                    <div class="control is-expanded">
+                        <input 
+                            class="input" 
+                            type="text" 
+                            name="search" 
+                            value="{{search}}"
+                            placeholder="Search files..."
+                        >
+                    </div>
+                    <div class="control">
+                        <button type="submit" class="button is-info">
+                            <span class="icon">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-narrow">
+                <div class="field">
+                    <div class="control">
+                        <div class="select">
+                            <select name="type" onchange="this.form.submit()">
+                                <option value="all" {{#eq type 'all'}}selected{{/eq}}>All Files</option>
+                                <option value="images" {{#eq type 'images'}}selected{{/eq}}>Images</option>
+                                <option value="documents" {{#eq type 'documents'}}selected{{/eq}}>Documents</option>
+                                <option value="other" {{#eq type 'other'}}selected{{/eq}}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{#if search}}
+            <div class="column is-narrow">
+                <a href="/admin/media" class="button">
+                    <span class="icon">
+                        <i class="fas fa-times"></i>
+                    </span>
+                    <span>Clear</span>
+                </a>
+            </div>
+            {{/if}}
+        </div>
+    </form>
+</div>
+
+<!-- Media Grid -->
+<div class="box">
+    {{#if files}}
+    <div id="media-grid" class="media-grid">
+        {{#each files}}
+        <div class="media-item" data-filename="{{this.filename}}">
+            <div class="media-preview">
+                {{#if this.isImage}}
+                <img src="/media/{{this.filename}}" alt="{{this.originalName}}" loading="lazy">
+                {{else}}
+                <div class="file-icon">
+                    <i class="fas fa-{{this.icon}} fa-3x"></i>
+                </div>
+                {{/if}}
+                
+                <div class="media-overlay">
+                    <div class="media-actions">
+                        <button class="button is-small is-primary" onclick="copyUrl('{{this.filename}}')">
+                            <span class="icon">
+                                <i class="fas fa-copy"></i>
+                            </span>
+                        </button>
+                        <a href="/media/{{this.filename}}" target="_blank" class="button is-small is-info">
+                            <span class="icon">
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                        </a>
+                        <button class="button is-small is-danger" onclick="deleteFile('{{this.filename}}', '{{this.originalName}}')">
+                            <span class="icon">
+                                <i class="fas fa-trash"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="media-info">
+                <p class="media-name" title="{{this.originalName}}">
+                    {{truncate this.originalName 25}}
+                </p>
+                <div class="media-meta">
+                    <span class="tag is-light is-small">
+                        {{formatFileSize this.size}}
+                    </span>
+                    {{#if this.dimensions}}
+                    <span class="tag is-light is-small">
+                        {{this.dimensions.width}}×{{this.dimensions.height}}
+                    </span>
+                    {{/if}}
+                </div>
+                <div class="media-date">
+                    {{formatDate this.uploadDate}}
+                </div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+
+    <!-- Pagination -->
+    {{#if pagination}}
+    {{#if pagination.totalPages}}
+    {{#if (gt pagination.totalPages 1)}}
+    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+        {{#if pagination.hasPrevious}}
+        <a class="pagination-previous" href="/admin/media?page={{pagination.previousPage}}{{#if search}}&search={{search}}{{/if}}{{#if type}}&type={{type}}{{/if}}">
+            Previous
+        </a>
+        {{else}}
+        <a class="pagination-previous" title="This is the first page" disabled>Previous</a>
+        {{/if}}
+        
+        {{#if pagination.hasNext}}
+        <a class="pagination-next" href="/admin/media?page={{pagination.nextPage}}{{#if search}}&search={{search}}{{/if}}{{#if type}}&type={{type}}{{/if}}">
+            Next page
+        </a>
+        {{else}}
+        <a class="pagination-next" title="This is the last page" disabled>Next page</a>
+        {{/if}}
+
+        <ul class="pagination-list">
+            {{#each pagination.pages}}
+            {{#if this.isCurrent}}
+            <li>
+                <a class="pagination-link is-current" aria-label="Page {{this.number}}" aria-current="page">
+                    {{this.number}}
+                </a>
+            </li>
+            {{else if this.isEllipsis}}
+            <li>
+                <span class="pagination-ellipsis">&hellip;</span>
+            </li>
+            {{else}}
+            <li>
+                <a class="pagination-link" 
+                   href="/admin/media?page={{this.number}}{{#if ../search}}&search={{../search}}{{/if}}{{#if ../type}}&type={{../type}}{{/if}}"
+                   aria-label="Go to page {{this.number}}">
+                    {{this.number}}
+                </a>
+            </li>
+            {{/if}}
+            {{/each}}
+        </ul>
+    </nav>
+    {{/if}}
+    {{/if}}
+    {{/if}}
+    {{else}}
+    <div class="has-text-centered has-text-grey">
+        <p class="is-size-4">
+            <span class="icon is-large">
+                <i class="fas fa-images"></i>
+            </span>
+        </p>
+        <p class="is-size-5">No media files found</p>
+        {{#if search}}
+        <p>Try adjusting your search terms or <a href="/admin/media">view all files</a></p>
+        {{else}}
+        <p>Get started by uploading your first file</p>
+        {{/if}}
+    </div>
+    {{/if}}
+</div>
+
+<style>
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.media-item {
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.media-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.media-preview {
+    position: relative;
+    height: 150px;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.media-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.file-icon {
+    color: #7a7a7a;
+}
+
+.media-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.media-item:hover .media-overlay {
+    opacity: 1;
+}
+
+.media-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.media-info {
+    padding: 0.75rem;
+}
+
+.media-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+}
+
+.media-meta {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.media-date {
+    font-size: 0.75rem;
+    color: #7a7a7a;
+}
+
+.dropzone {
+    border: 2px dashed #dbdbdb;
+    border-radius: 6px;
+    padding: 2rem;
+    transition: border-color 0.2s;
+}
+
+.dropzone.dragover {
+    border-color: #3273dc;
+    background-color: #f0f8ff;
+}
+
+#upload-area {
+    margin-bottom: 1.5rem;
+}
+
+.content-header {
+    margin-bottom: 1.5rem;
+}
+</style>
+
+<script>
+// File upload handling
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file-upload');
+    const fileName = document.getElementById('file-name');
+    const uploadForm = document.getElementById('upload-form');
+    const uploadArea = document.getElementById('upload-area');
+
+    // File selection display
+    fileInput.addEventListener('change', function() {
+        const files = this.files;
+        if (files.length === 0) {
+            fileName.textContent = 'No files selected';
+        } else if (files.length === 1) {
+            fileName.textContent = files[0].name;
+        } else {
+            fileName.textContent = `${files.length} files selected`;
+        }
+    });
+
+    // Drag and drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        uploadForm.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        uploadForm.classList.remove('dragover');
+    }
+
+    uploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        
+        const event = new Event('change', { bubbles: true });
+        fileInput.dispatchEvent(event);
+    }
+});
+
+// Copy media URL to clipboard
+function copyUrl(filename) {
+    const url = `${window.location.origin}/media/${filename}`;
+    navigator.clipboard.writeText(url).then(function() {
+        // Show success notification
+        const notification = document.createElement('div');
+        notification.className = 'notification is-success is-light';
+        notification.innerHTML = '<strong>Copied!</strong> Media URL copied to clipboard';
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';
+        notification.style.zIndex = '9999';
+        notification.style.maxWidth = '300px';
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            alert('Media URL copied to clipboard');
+        } catch (err) {
+            alert('Failed to copy URL');
+        }
+        document.body.removeChild(textArea);
+    });
+}
+
+// Delete file
+function deleteFile(filename, originalName) {
+    if (confirm(`Are you sure you want to delete "${originalName}"?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/media/${filename}/delete`;
+        
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_csrf';
+        csrfInput.value = document.querySelector('input[name="_csrf"]').value;
+        form.appendChild(csrfInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

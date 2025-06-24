@@ -1,0 +1,114 @@
+<div class="content-header">
+    <h1>
+        <span class="icon">
+            <i class="fas fa-tachometer-alt"></i>
+        </span>
+        Dashboard
+    </h1>
+</div>
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-number">{{pageCount}}</div>
+        <div class="stat-label">Pages</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{mediaCount}}</div>
+        <div class="stat-label">Media Files</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{themeCount}}</div>
+        <div class="stat-label">Themes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{rssSubscribers}}</div>
+        <div class="stat-label">RSS Subscribers</div>
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column is-8">
+        <div class="box">
+            <h2 class="title is-4">Recent Pages</h2>
+            {{#if recentPages}}
+            <div class="content">
+                {{#each recentPages}}
+                <div class="page-item">
+                    <h3>
+                        <a href="/admin/pages/{{this.slug}}/edit">{{this.title}}</a>
+                    </h3>
+                    <div class="page-meta">
+                        <span>
+                            <i class="fas fa-calendar"></i>
+                            {{formatDate this.updatedAt}}
+                        </span>
+                        <span>
+                            <i class="fas fa-{{#if this.published}}eye{{else}}eye-slash{{/if}}"></i>
+                            {{#if this.published}}Published{{else}}Draft{{/if}}
+                        </span>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            {{else}}
+            <div class="has-text-grey">
+                <p>No pages created yet.</p>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+    
+    <div class="column is-4">
+        <div class="box">
+            <h2 class="title is-4">Quick Actions</h2>
+            <div class="buttons is-flex-direction-column">
+                <a href="/admin/pages/new" class="button is-primary is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-plus"></i>
+                    </span>
+                    <span>New Page</span>
+                </a>
+                <a href="/admin/media" class="button is-info is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-upload"></i>
+                    </span>
+                    <span>Upload Media</span>
+                </a>
+                <a href="/admin/themes" class="button is-warning is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-palette"></i>
+                    </span>
+                    <span>Manage Themes</span>
+                </a>
+                <a href="/" target="_blank" class="button is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-external-link-alt"></i>
+                    </span>
+                    <span>View Site</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="box">
+            <h2 class="title is-4">System Status</h2>
+            <div class="content">
+                <div class="field">
+                    <label class="label">Theme Engine</label>
+                    <span class="tag is-success">Handlebars</span>
+                </div>
+                <div class="field">
+                    <label class="label">Cache Status</label>
+                    <span class="tag is-{{#if cacheEnabled}}success{{else}}warning{{/if}}">
+                        {{#if cacheEnabled}}Enabled{{else}}Disabled{{/if}}
+                    </span>
+                </div>
+                <div class="field">
+                    <label class="label">Search Index</label>
+                    <span class="tag is-{{#if searchEnabled}}success{{else}}warning{{/if}}">
+                        {{#if searchEnabled}}Ready{{else}}Needs Rebuild{{/if}}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

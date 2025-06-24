@@ -1,0 +1,40 @@
+<!-- Flash Messages -->
+{{#if savedMessage}}
+<div class="notification is-success fade-in">
+    <button class="delete"></button>
+    <span class="icon">
+        <i class="fas fa-check-circle"></i>
+    </span>
+    <strong>Success!</strong> {{savedMessage}} has been saved.
+</div>
+{{/if}}
+
+{{#if deletedMessage}}
+<div class="notification is-info fade-in">
+    <button class="delete"></button>
+    <span class="icon">
+        <i class="fas fa-trash"></i>
+    </span>
+    <strong>Deleted!</strong> {{deletedMessage}} has been deleted.
+</div>
+{{/if}}
+
+{{#if uploadedMessage}}
+<div class="notification is-success fade-in">
+    <button class="delete"></button>
+    <span class="icon">
+        <i class="fas fa-upload"></i>
+    </span>
+    <strong>Uploaded!</strong> {{uploadedMessage}} uploaded successfully.
+</div>
+{{/if}}
+
+{{#if error}}
+<div class="notification is-danger fade-in">
+    <button class="delete"></button>
+    <span class="icon">
+        <i class="fas fa-exclamation-triangle"></i>
+    </span>
+    <strong>Error!</strong> {{error}}
+</div>
+{{/if}}
