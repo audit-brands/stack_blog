@@ -101,7 +101,7 @@ router.use(async (req, res, next) => {
     }
 
     // Render the markdown content to HTML
-    const htmlContent = markdownService.render(page.content);
+    const htmlContent = await markdownService.render(page.content);
     
     // Extract metadata for additional template data
     const contentMetadata = markdownService.extractMetadata(page.content);
