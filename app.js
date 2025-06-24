@@ -186,6 +186,22 @@ const hbs = exphbs.create({
     },
     pluralize: function(count, singular, plural) {
       return count === 1 ? singular : (plural || singular + 's');
+    },
+    block: function(name) {
+      const blocks = this._blocks || (this._blocks = {});
+      const block = blocks[name] || (blocks[name] = []);
+      block.push(arguments[arguments.length - 1].fn(this));
+      return null;
+    },
+    contentFor: function(name, options) {
+      const blocks = this._blocks || (this._blocks = {});
+      const block = blocks[name] || (blocks[name] = []);
+      block.push(options.fn(this));
+    },
+    outputBlock: function(name) {
+      const blocks = this._blocks;
+      const content = blocks && blocks[name] ? blocks[name].join('\n') : null;
+      return new handlebars.SafeString(content || '');
     }
   }
 });
@@ -194,6 +210,7 @@ const hbs = exphbs.create({
 app.engine('html', nunjucksEnv.render.bind(nunjucksEnv));
 app.engine('hbs', hbs.engine);
 app.set('view engine', 'html');
+app.set('views', path.join(__dirname, 'views'));
 
 // Initialize Theme Service with template caching
 const themeService = new ThemeService(app, templateCacheService);
