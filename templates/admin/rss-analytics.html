@@ -1,0 +1,581 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+<div class="content-header">
+    <h1>
+        <span class="icon">
+            <i class="fas fa-chart-line"></i>
+        </span>
+        RSS Analytics & Sponsors
+    </h1>
+    <div class="content-header-actions">
+        <button class="button is-primary" onclick="refreshAnalytics()">
+            <span class="icon">
+                <i class="fas fa-sync-alt"></i>
+            </span>
+            <span>Refresh Data</span>
+        </button>
+        <button class="button is-success" onclick="showAddSponsorModal()">
+            <span class="icon">
+                <i class="fas fa-plus"></i>
+            </span>
+            <span>Add Sponsor</span>
+        </button>
+    </div>
+</div>
+
+<!-- Analytics Overview -->
+<div class="columns">
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Feed Generations</p>
+            <p class="title is-4" id="feed-generations">-</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Total Impressions</p>
+            <p class="title is-4" id="total-impressions">-</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Click-Through Rate</p>
+            <p class="title is-4" id="click-rate">-</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Active Sponsors</p>
+            <p class="title is-4" id="active-sponsors">-</p>
+        </div>
+    </div>
+</div>
+
+<div class="columns">
+    <!-- RSS Feed Info -->
+    <div class="column is-6">
+        <div class="form-section">
+            <h3>
+                <span class="icon">
+                    <i class="fas fa-rss"></i>
+                </span>
+                RSS Feed Information
+            </h3>
+
+            <div class="box">
+                <div class="field">
+                    <label class="label">RSS Feed URL</label>
+                    <div class="control">
+                        <input class="input" type="text" readonly id="rss-url" onclick="this.select()">
+                    </div>
+                    <p class="help">Share this URL with RSS readers and podcast platforms</p>
+                </div>
+
+                <div class="field">
+                    <label class="label">JSON Feed URL</label>
+                    <div class="control">
+                        <input class="input" type="text" readonly id="json-feed-url" onclick="this.select()">
+                    </div>
+                    <p class="help">Modern JSON-based feed for API consumers</p>
+                </div>
+
+                <div class="notification is-info is-light">
+                    <h4>RSS Features</h4>
+                    <ul>
+                        <li>✅ RSS 2.0 Standard Compliance</li>
+                        <li>✅ Enhanced Analytics Integration</li>
+                        <li>✅ Sponsor Tracking & Attribution</li>
+                        <li>✅ Ghost Theme Compatibility</li>
+                        <li>✅ Performance Monitoring</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="column is-6">
+        <div class="form-section">
+            <h3>
+                <span class="icon">
+                    <i class="fas fa-activity"></i>
+                </span>
+                Recent Activity
+            </h3>
+
+            <div class="box">
+                <div class="tabs is-small">
+                    <ul>
+                        <li class="is-active" data-tab="impressions">
+                            <a onclick="switchTab('impressions')">Impressions</a>
+                        </li>
+                        <li data-tab="clicks">
+                            <a onclick="switchTab('clicks')">Clicks</a>
+                        </li>
+                        <li data-tab="performance">
+                            <a onclick="switchTab('performance')">Performance</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div id="tab-impressions" class="tab-content">
+                    <div id="recent-impressions">
+                        <div class="has-text-centered" style="padding: 2rem;">
+                            <span class="icon is-large">
+                                <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                            </span>
+                            <p>Loading impressions...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-clicks" class="tab-content" style="display: none;">
+                    <div id="recent-clicks">
+                        <div class="has-text-centered" style="padding: 2rem;">
+                            <span class="icon is-large">
+                                <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                            </span>
+                            <p>Loading clicks...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-performance" class="tab-content" style="display: none;">
+                    <div id="performance-metrics">
+                        <div class="has-text-centered" style="padding: 2rem;">
+                            <span class="icon is-large">
+                                <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                            </span>
+                            <p>Loading performance data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sponsor Management -->
+<div class="form-section">
+    <h3>
+        <span class="icon">
+            <i class="fas fa-handshake"></i>
+        </span>
+        Sponsor Management
+    </h3>
+
+    <div id="sponsors-container">
+        <div class="has-text-centered" style="padding: 2rem;">
+            <span class="icon is-large">
+                <i class="fas fa-spinner fa-pulse fa-2x"></i>
+            </span>
+            <p>Loading sponsors...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Add Sponsor Modal -->
+<div class="modal" id="add-sponsor-modal">
+    <div class="modal-background" onclick="closeAddSponsorModal()"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Add New Sponsor</p>
+            <button class="delete" aria-label="close" onclick="closeAddSponsorModal()"></button>
+        </header>
+        <section class="modal-card-body">
+            <form id="add-sponsor-form">
+                <div class="field">
+                    <label class="label">Sponsor Name</label>
+                    <div class="control">
+                        <input class="input" type="text" name="name" required placeholder="TechCorp Inc.">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Sponsor ID</label>
+                    <div class="control">
+                        <input class="input" type="text" name="id" required placeholder="techcorp-2024-q4">
+                    </div>
+                    <p class="help">Unique identifier for tracking purposes</p>
+                </div>
+
+                <div class="field">
+                    <label class="label">Website URL</label>
+                    <div class="control">
+                        <input class="input" type="url" name="url" placeholder="https://techcorp.com">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Description/Message</label>
+                    <div class="control">
+                        <textarea class="textarea" name="description" placeholder="Revolutionizing media workflows with AI-powered tools..."></textarea>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Placement</label>
+                    <div class="control">
+                        <div class="select">
+                            <select name="placement">
+                                <option value="post-content">After Content</option>
+                                <option value="pre-content">Before Content</option>
+                                <option value="mid-content">Mid Content</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Pricing Model</label>
+                    <div class="control">
+                        <div class="select">
+                            <select name="pricingModel">
+                                <option value="flat">Flat Rate</option>
+                                <option value="cpm">Cost Per Mille (CPM)</option>
+                                <option value="cpc">Cost Per Click (CPC)</option>
+                                <option value="performance">Performance Based</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Features</label>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="titleIntegration">
+                            Title Integration (Show in post titles)
+                        </label>
+                    </div>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="descriptionAd" checked>
+                            Description Ads (Show in RSS description)
+                        </label>
+                    </div>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="contentIntegration">
+                            Content Integration (Embed in content)
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-success" onclick="addSponsor()">Add Sponsor</button>
+            <button class="button" onclick="closeAddSponsorModal()">Cancel</button>
+        </footer>
+    </div>
+</div>
+
+<script>
+let currentAnalytics = null;
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setupRSSUrls();
+    loadAnalytics();
+    loadSponsors();
+});
+
+function setupRSSUrls() {
+    const baseUrl = window.location.origin;
+    document.getElementById('rss-url').value = `${baseUrl}/rss.xml`;
+    document.getElementById('json-feed-url').value = `${baseUrl}/feed.json`;
+}
+
+async function loadAnalytics() {
+    try {
+        const response = await fetch('/api/rss/analytics');
+        currentAnalytics = await response.json();
+        
+        updateAnalyticsDisplay();
+        updateRecentActivity();
+        
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+        showNotification('Error loading analytics data', 'is-danger');
+    }
+}
+
+function updateAnalyticsDisplay() {
+    if (!currentAnalytics) return;
+    
+    const { overview, performance, recent } = currentAnalytics;
+    
+    document.getElementById('feed-generations').textContent = overview.feedGenerations || 0;
+    document.getElementById('total-impressions').textContent = overview.totalImpressions || 0;
+    document.getElementById('active-sponsors').textContent = overview.activeSponsors || 0;
+    
+    // Calculate CTR
+    const ctr = overview.totalClicks && overview.totalImpressions ? 
+        ((overview.totalClicks / overview.totalImpressions) * 100).toFixed(2) + '%' : 
+        '0%';
+    document.getElementById('click-rate').textContent = ctr;
+}
+
+function updateRecentActivity() {
+    if (!currentAnalytics || !currentAnalytics.recent) return;
+    
+    // Update impressions
+    const impressionsContainer = document.getElementById('recent-impressions');
+    if (currentAnalytics.recent.impressions.length > 0) {
+        impressionsContainer.innerHTML = currentAnalytics.recent.impressions.map(impression => `
+            <div class="notification is-light">
+                <small class="has-text-grey">${new Date(impression.timestamp).toLocaleString()}</small><br>
+                <strong>User Agent:</strong> ${impression.userAgent || 'Unknown'}<br>
+                <strong>IP:</strong> ${impression.ip || 'Unknown'}
+            </div>
+        `).join('');
+    } else {
+        impressionsContainer.innerHTML = '<p class="has-text-grey">No recent impressions</p>';
+    }
+    
+    // Update clicks
+    const clicksContainer = document.getElementById('recent-clicks');
+    if (currentAnalytics.recent.clicks.length > 0) {
+        clicksContainer.innerHTML = currentAnalytics.recent.clicks.map(click => `
+            <div class="notification is-light">
+                <small class="has-text-grey">${new Date(click.timestamp).toLocaleString()}</small><br>
+                <strong>Target:</strong> ${click.targetUrl || 'Unknown'}<br>
+                <strong>User Agent:</strong> ${click.userAgent || 'Unknown'}
+            </div>
+        `).join('');
+    } else {
+        clicksContainer.innerHTML = '<p class="has-text-grey">No recent clicks</p>';
+    }
+    
+    // Update performance
+    const performanceContainer = document.getElementById('performance-metrics');
+    if (currentAnalytics.performance) {
+        const perf = currentAnalytics.performance;
+        performanceContainer.innerHTML = `
+            <div class="content">
+                <h5>Request Performance</h5>
+                <ul>
+                    <li><strong>Total Requests:</strong> ${perf.count || 0}</li>
+                    <li><strong>Average Duration:</strong> ${(perf.avgDuration || 0).toFixed(2)}ms</li>
+                    <li><strong>Min Duration:</strong> ${(perf.minDuration || 0).toFixed(2)}ms</li>
+                    <li><strong>Max Duration:</strong> ${(perf.maxDuration || 0).toFixed(2)}ms</li>
+                </ul>
+            </div>
+        `;
+    } else {
+        performanceContainer.innerHTML = '<p class="has-text-grey">No performance data available</p>';
+    }
+}
+
+async function loadSponsors() {
+    try {
+        const response = await fetch('/api/rss/sponsors');
+        const data = await response.json();
+        
+        updateSponsorsDisplay(data.sponsors || []);
+        
+    } catch (error) {
+        console.error('Error loading sponsors:', error);
+        showNotification('Error loading sponsors', 'is-danger');
+    }
+}
+
+function updateSponsorsDisplay(sponsors) {
+    const container = document.getElementById('sponsors-container');
+    
+    if (sponsors.length === 0) {
+        container.innerHTML = `
+            <div class="notification is-warning">
+                <h4>No sponsors configured</h4>
+                <p>Add your first sponsor to start monetizing your RSS feed!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const sponsorsHTML = sponsors.map(sponsor => `
+        <div class="box">
+            <div class="media">
+                <div class="media-content">
+                    <h5>${sponsor.name}</h5>
+                    <p class="subtitle is-6">
+                        <span class="tag ${sponsor.active ? 'is-success' : 'is-light'}">
+                            ${sponsor.active ? 'Active' : 'Inactive'}
+                        </span>
+                        <span class="tag is-info">${sponsor.placement || 'post-content'}</span>
+                        ${sponsor.pricing ? `<span class="tag is-warning">${sponsor.pricing.model || 'flat'}</span>` : ''}
+                    </p>
+                    ${sponsor.description ? `<p>${sponsor.description}</p>` : ''}
+                    ${sponsor.url ? `<p><a href="${sponsor.url}" target="_blank">${sponsor.url}</a></p>` : ''}
+                </div>
+                <div class="media-right">
+                    <div class="buttons">
+                        <button class="button is-small is-warning" onclick="editSponsor('${sponsor.id}')">
+                            <span class="icon"><i class="fas fa-edit"></i></span>
+                            <span>Edit</span>
+                        </button>
+                        <button class="button is-small is-danger" onclick="deleteSponsor('${sponsor.id}')">
+                            <span class="icon"><i class="fas fa-trash"></i></span>
+                            <span>Delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = sponsorsHTML;
+}
+
+function switchTab(tabName) {
+    // Update tab active state
+    document.querySelectorAll('.tabs li').forEach(tab => tab.classList.remove('is-active'));
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('is-active');
+    
+    // Show/hide tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+    document.getElementById(`tab-${tabName}`).style.display = 'block';
+}
+
+function refreshAnalytics() {
+    showNotification('Refreshing analytics data...', 'is-info');
+    loadAnalytics();
+    loadSponsors();
+}
+
+function showAddSponsorModal() {
+    document.getElementById('add-sponsor-modal').classList.add('is-active');
+}
+
+function closeAddSponsorModal() {
+    document.getElementById('add-sponsor-modal').classList.remove('is-active');
+    document.getElementById('add-sponsor-form').reset();
+}
+
+async function addSponsor() {
+    const form = document.getElementById('add-sponsor-form');
+    const formData = new FormData(form);
+    
+    const sponsorData = {
+        id: formData.get('id'),
+        name: formData.get('name'),
+        url: formData.get('url'),
+        description: formData.get('description'),
+        placement: formData.get('placement'),
+        pricing: {
+            model: formData.get('pricingModel')
+        },
+        titleIntegration: formData.has('titleIntegration'),
+        descriptionAd: formData.has('descriptionAd'),
+        contentIntegration: formData.has('contentIntegration'),
+        active: true
+    };
+    
+    try {
+        const response = await fetch('/api/rss/sponsors', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(sponsorData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(`Sponsor "${sponsorData.name}" added successfully!`, 'is-success');
+            closeAddSponsorModal();
+            loadSponsors();
+        } else {
+            showNotification(result.error || 'Failed to add sponsor', 'is-danger');
+        }
+        
+    } catch (error) {
+        console.error('Error adding sponsor:', error);
+        showNotification('Error adding sponsor', 'is-danger');
+    }
+}
+
+async function deleteSponsor(sponsorId) {
+    if (!confirm(`Are you sure you want to delete this sponsor? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/rss/sponsors/${sponsorId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Sponsor deleted successfully!', 'is-success');
+            loadSponsors();
+        } else {
+            showNotification(result.error || 'Failed to delete sponsor', 'is-danger');
+        }
+        
+    } catch (error) {
+        console.error('Error deleting sponsor:', error);
+        showNotification('Error deleting sponsor', 'is-danger');
+    }
+}
+
+function editSponsor(sponsorId) {
+    // TODO: Implement edit sponsor functionality
+    showNotification('Edit sponsor functionality coming soon!', 'is-info');
+}
+
+function showNotification(message, type = 'is-info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <button class="delete" onclick="this.parentElement.remove()"></button>
+        ${message}
+    `;
+    
+    document.body.appendChild(notification);
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.maxWidth = '300px';
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+
+<style>
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.content-header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.tab-content {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section h3 {
+    border-bottom: 1px solid #dbdbdb;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}

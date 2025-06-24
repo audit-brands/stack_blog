@@ -890,6 +890,28 @@ router.get('/themes', authService.requireAuth.bind(authService), csrfProtection,
 });
 
 /**
+ * RSS Analytics Dashboard
+ */
+router.get('/rss-analytics', authService.requireAuth.bind(authService), csrfProtection, (req, res) => {
+  const user = authService.getAuthenticatedUser(req.session);
+  
+  res.render('admin/rss-analytics', {
+    page: {
+      metadata: {
+        title: 'RSS Analytics & Sponsors'
+      }
+    },
+    site: {
+      title: 'Stack Blog',
+      description: 'Admin Panel'
+    },
+    user,
+    csrfToken: req.csrfToken(),
+    currentPath: req.path
+  });
+});
+
+/**
  * API: List themes
  */
 router.get('/api/themes', authService.requireAuth.bind(authService), async (req, res) => {

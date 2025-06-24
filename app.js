@@ -9,6 +9,7 @@ const config = require('./config/default');
 const frontendRoutes = require('./routes/frontend');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
+const rssRoutes = require('./routes/rss');
 const { cacheService, pluginService, setThemeService, ThemeService, templateCacheService } = require('./services');
 
 // Security middleware
@@ -166,6 +167,10 @@ app.use('/media', express.static(path.join(__dirname, 'content'), {
 // Routes with specific rate limiting
 app.use('/api', apiLimiter, apiRoutes);
 app.use('/admin', adminSecurityCheck, adminRoutes);
+
+// RSS routes (before frontend to catch /rss.xml)
+app.use('/', rssRoutes);
+
 app.use('/', frontendRoutes);
 
 // 404 handler
