@@ -290,6 +290,19 @@ app.use('/media', express.static(path.join(__dirname, 'content'), {
   }
 }));
 
+// Health check endpoints for load balancer
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.get('/status', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // Routes with specific rate limiting
 app.use('/api', apiLimiter, apiRoutes);
 app.use('/admin', adminSecurityCheck, adminRoutes);
