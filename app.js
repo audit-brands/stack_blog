@@ -342,7 +342,7 @@ async function startServer() {
     const server = app.listen(PORT, () => {
       console.log(`Stack Blog server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`Templates: ${templatePath}`);
+      console.log(`Templates: ${path.join(__dirname, 'views')}`);
       console.log(`Plugins loaded: ${pluginService.getAllPlugins().length}`);
     });
     
