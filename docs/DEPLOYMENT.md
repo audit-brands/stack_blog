@@ -26,7 +26,16 @@ This guide covers deploying Stack Blog to production environments with proper se
 
 ## 🚀 Deployment Methods
 
-### Method 1: Simple One-Click Deployment (Recommended)
+### Method 1: Pair Networks Deployment (Production Ready)
+
+**Status**: ✅ **Live and Working at [cpeio.online](https://cpeio.online/)**
+
+For Pair Networks hosting, see our comprehensive guide:
+- **Quick Start**: Use `./deploy-pair-networks.sh`
+- **Detailed Guide**: [PAIR_NETWORKS_LESSONS_LEARNED.md](./PAIR_NETWORKS_LESSONS_LEARNED.md)
+- **Key Requirement**: Configure reverse proxy to port 8080 in control panel
+
+### Method 2: Universal Deployment (Any Platform)
 
 **Best for:** Most users who want a quick, automated setup without Docker.
 

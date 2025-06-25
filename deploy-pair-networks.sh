@@ -203,10 +203,14 @@ CONTENT
     
     echo "🌐 Testing basic connectivity..."
     sleep 2
-    if curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/" | grep -q "200"; then
-        echo "✅ Application responding on port 3000"
+    if curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080/health" | grep -q "200"; then
+        echo "✅ Application responding on port 8080"
+        echo "✅ Health check endpoint working"
     else
         echo "❌ Application not responding properly"
+        echo "📋 Checking both port 8080 and fallback port 3000..."
+        curl -I "http://localhost:8080/" 2>/dev/null || echo "Port 8080 not responding"
+        curl -I "http://localhost:3000/" 2>/dev/null || echo "Port 3000 not responding"
         tail -10 app.log
     fi
 EOF
@@ -233,6 +237,17 @@ echo ""
 echo "🔗 Important URLs:"
 echo "  Site: https://cpeio.online"
 echo "  Admin: https://cpeio.online/admin"
+echo "  Health: https://cpeio.online/health"
 echo "  RSS: https://cpeio.online/rss.xml"
 echo "  JSON Feed: https://cpeio.online/feed.json"
 echo "  API Status: https://cpeio.online/api/status"
+
+echo ""
+echo "⚠️  IMPORTANT: Verify Pair Networks Proxy Configuration"
+echo "  1. Login to https://my.pair.com"
+echo "  2. Domains → Manage Your Domain Names → cpeio.online"
+echo "  3. Manage Reverse Proxy Map"
+echo "  4. Ensure proxy: / → HTTP → 8080"
+echo "  5. If 503 errors persist, wait 10 minutes for propagation"
+echo ""
+echo "📖 For troubleshooting, see: docs/PAIR_NETWORKS_LESSONS_LEARNED.md"
