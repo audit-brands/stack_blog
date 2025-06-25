@@ -82,6 +82,7 @@ router.use(async (req, res, next) => {
   try {
     // Get the page slug from the URL path
     let slug = req.path === '/' ? config.content.homeSlug : req.path.substring(1);
+    console.log(`Frontend route: path=${req.path}, slug=${slug}, homeSlug=${config.content.homeSlug}`);
     
     // Remove trailing slash if present
     if (slug.endsWith('/')) {
@@ -94,9 +95,11 @@ router.use(async (req, res, next) => {
 
     // Try to get the page from content service
     const page = await contentService.getPage(slug);
+    console.log(`ContentService result for slug '${slug}':`, page ? 'Found' : 'Not found');
     
     if (!page) {
       // Page not found, pass to 404 handler
+      console.log(`Page not found for slug '${slug}', passing to 404 handler`);
       return next();
     }
 
@@ -127,10 +130,12 @@ router.use(async (req, res, next) => {
     };
 
     // Render the page using the template engine
+    console.log(`Rendering template '${template}' for slug '${slug}'`);
     res.render(template, templateData);
+    console.log(`Successfully rendered template '${template}' for slug '${slug}'`);
     
   } catch (error) {
-    console.error('Error rendering page:', error);
+    console.error('Error rendering page for slug', slug, ':', error);
     next(error);
   }
 });

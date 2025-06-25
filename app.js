@@ -290,6 +290,12 @@ app.use('/media', express.static(path.join(__dirname, 'content'), {
   }
 }));
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} ${req.method} ${req.path} - ${req.get('host')}`);
+  next();
+});
+
 // Health check endpoints for load balancer
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
