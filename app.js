@@ -366,8 +366,8 @@ async function startServer() {
   }
 }
 
-// Only start server if not in test environment
-if (process.env.NODE_ENV !== 'test') {
+// Only start server if not in test environment and not running under Passenger
+if (process.env.NODE_ENV !== 'test' && !process.env.PASSENGER_BASE_URI) {
   startServer();
 }
 
